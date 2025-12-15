@@ -132,7 +132,7 @@ EMAIL_FROM=Your Name <your-email@gmail.com>
 FRONTEND_URL=http://your-domain.com
 
 # HuggingFace (for AI features)
-HUGGINGFACE_API_KEY=hf_xxxxxxxxxxxxx
+HUGGINGFACE_API_KEY=your-huggingface-api-key
 ```
 
 ### Frontend (`paint-frontend/.env`)
