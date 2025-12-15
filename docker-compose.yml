@@ -1,18 +1,8 @@
-# ============================================
-# DOCKER COMPOSE - Runs Everything Together!
-# ============================================
-# This file orchestrates:
-# - Frontend (React + Nginx)
-# - Backend (Node.js/Express)
-# - Uses MongoDB Atlas (cloud) - no local DB needed!
-#
-# Just run: docker-compose up
-# And everything starts automatically!
 
 version: '3.8'
 
 services:
-  # -------- BACKEND (Node.js + Express) --------
+  #BACKEND
   backend:
     build: ./paint-backend
     container_name: paint-backend
@@ -24,7 +14,7 @@ services:
     networks:
       - paint-network
 
-  # -------- FRONTEND (React + Nginx) --------
+  #FRONTEND
   frontend:
     build: ./paint-frontend
     container_name: paint-frontend
@@ -38,7 +28,7 @@ services:
     networks:
       - paint-network
 
-# -------- NETWORKS --------
+# NETWORKS
 networks:
   paint-network:
     driver: bridge
