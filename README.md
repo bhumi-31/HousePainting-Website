@@ -188,15 +188,7 @@ See [DOCKER_README.md](./DOCKER_README.md) for detailed instructions.
 
 ---
 
-## 📞 Contact Information
-
-- **Phone**: 705-951-0764
-- **Email**: chandansingh3016@gmail.com
-- **Location**: 36 Harbourtown Crescent, Ontario, Canada
-
----
-
-## 🔐 Admin Access
+##  Admin Access
 
 1. Register a user account
 2. In MongoDB, update the user's role to `admin`:
