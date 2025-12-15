@@ -214,10 +214,4 @@ See [DOCKER_README.md](./DOCKER_README.md) for detailed instructions.
 
 ---
 
-## 📄 License
-
-MIT License - feel free to use for your own business!
-
----
-
 **Made with ❤️ by Bhumika Narula**
