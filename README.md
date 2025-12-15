@@ -12,6 +12,15 @@ A full-stack web application for a professional house painting business serving 
 
 ---
 
+## 🖼️ Screenshots
+
+> _Add your own screenshots below!_
+
+![Home Page Demo](./screenshots/homepage.png)
+![Admin Dashboard Demo](./screenshots/admin-dashboard.png)
+
+---
+
 ## ✨ Features
 
 ### Customer Features
@@ -219,4 +228,4 @@ MIT License - feel free to use for your own business!
 
 ---
 
-**Made with ❤️ by Chandan House Painting**
+**Made with ❤️ by Bhumika Narula**
