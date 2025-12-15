@@ -257,53 +257,42 @@ QuoteSchema.pre('save', function (next) {
 //caluculate
 
 QuoteSchema.methods.calculateEstimate = function () {
-    const baseRates = {
+    // Base price per square foot - matches frontend
+    const basePrice = 5;
+
+    // Quality multipliers - matches frontend exactly
+    const qualityMultipliers = {
         economy: 0.8,
-        standard: 1.2,
-        preminum: 1.8,
-        luxury: 2.5
+        standard: 1.0,
+        premium: 1.2,
+        luxury: 1.5
     };
 
+    const qualityMultiplier = qualityMultipliers[this.paintQuality] || 1.0;
+    const coatsMultiplier = this.numberOfCoats / 2;
 
-    // Labor rate per sq ft
-    const laborRatePerSqFt = baseRates[this.paintQuality] || 3.5;
+    // Base calculation: size * basePrice * quality * coats - matches frontend
+    const laborCost = this.roomSize * basePrice * qualityMultiplier * coatsMultiplier;
 
-    // Calculate total paintable area
+    // Material cost (included in labor for frontend display)
+    const materialCost = 0;
 
-    const wallArea = this.roomSize;
-    const ceilingArea = this.additionalServices.includes('ceiling_painting') ? this.roomSize : 0;
-    const totalArea = wallArea + ceilingArea;
-
-    // Labor cost
-    const laborCost = totalArea * laborRatePerSqFt * this.numberOfCoats;
-
-    // Material cost 
-    const materialMultiplier = {
-        economy: 0.2,
-        standard: 0.3,
-        premium: 0.4,
-        luxury: 0.5
-    };
-
-    const materialCost = laborCost * (materialMultiplier[this.paintQuality] | 0.3);
-
-    // Additional services cost
+    // Additional services - fixed prices matching frontend exactly
     const additionalCosts = {
-        ceiling_painting: this.roomSize * 0.5,
+        ceiling_painting: 75,
         trim_painting: 50,
         door_painting: 35,
-        wall_preparation: this.roomSize * 0.3,
+        wall_preparation: 80,
         furniture_moving: 40,
         cleanup: 30,
-        primer_coat: this.roomSize * 0.2,
-        texture_removal: this.roomSize * 0.8
+        primer_coat: 50,
+        texture_removal: 100
     };
 
     let additionalServicesCost = 0;
     this.additionalServices.forEach(service => {
         additionalServicesCost += additionalCosts[service] || 0;
     });
-
 
     const total = laborCost + materialCost + additionalServicesCost;
 
@@ -323,22 +312,22 @@ QuoteSchema.methods.calculateEstimate = function () {
 
 //METHOD: Update status
 
-QuoteSchema.methods.updateStatus = function(newStatus, userId, note){
+QuoteSchema.methods.updateStatus = function (newStatus, userId, note) {
     this.status = newStatus;
 
     this.statusHistory.push({
-        status : newStatus,
-        changedAt : new Date(),
-        changedBy : userId,
-        note : note || ''
+        status: newStatus,
+        changedAt: new Date(),
+        changedBy: userId,
+        note: note || ''
     });
 
 
-    if(newStatus == 'quoted'){
+    if (newStatus == 'quoted') {
         this.quoteSentAt = new Date();
     }
 
-    if(newStatus == 'accepted' || newStatus == 'rejected'){
+    if (newStatus == 'accepted' || newStatus == 'rejected') {
         this.customerResponseAt = new Date();
     }
 
@@ -347,11 +336,11 @@ QuoteSchema.methods.updateStatus = function(newStatus, userId, note){
 
 // METHOD: Apply discount
 
-QuoteSchema.methods.applyDiscount = function(discountPercent){
+QuoteSchema.methods.applyDiscount = function (discountPercent) {
     this.discount = discountPercent;
 
     const basePrice = this.finalPrice || this.estimatedPrice;
-    const discountAmount = (basePrice* discountPercent)/100;
+    const discountAmount = (basePrice * discountPercent) / 100;
 
     this.finalPrice = Math.round(basePrice - discountAmount);
 
@@ -360,20 +349,20 @@ QuoteSchema.methods.applyDiscount = function(discountPercent){
 
 // STATIC: Get pending quotes
 
-QuoteSchema.statics.getPending = function() {
-  return this.find({ status: 'pending' })
-    .populate('user', 'name email phone')
-    .populate('service', 'name')
-    .sort('-createdAt');
+QuoteSchema.statics.getPending = function () {
+    return this.find({ status: 'pending' })
+        .populate('user', 'name email phone')
+        .populate('service', 'name')
+        .sort('-createdAt');
 };
 
 // STATIC: Get quotes by status
 
-QuoteSchema.statics.getByStatus = function(status) {
-  return this.find({ status })
-    .populate('user', 'name email phone')
-    .populate('service', 'name')
-    .sort('-createdAt');
+QuoteSchema.statics.getByStatus = function (status) {
+    return this.find({ status })
+        .populate('user', 'name email phone')
+        .populate('service', 'name')
+        .sort('-createdAt');
 };
 
 module.exports = mongoose.model('Quote', QuoteSchema);
