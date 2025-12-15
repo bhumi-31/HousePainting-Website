@@ -64,6 +64,12 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ credential }),
     }),
+
+  changePassword: (currentPassword, newPassword) =>
+    fetchApi("/auth/change-password", {
+      method: "PUT",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 };
 
 // Services API

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Edit2, Save, X, Shield, Star, Wand2, Download, Trash2 } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Edit2, Save, X, Shield, Star, Wand2, Download, Trash2, Lock, Eye, EyeOff } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import { Button, Input, useToast } from "../components/ui/index";
 import { authApi, reviewsApi, aiApi } from "../lib/api";
@@ -10,7 +10,7 @@ const Profile = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const [profile, setProfile] = useState(null);
   const [userReviews, setUserReviews] = useState([]);
   const [savedDesigns, setSavedDesigns] = useState([]);
@@ -22,6 +22,17 @@ const Profile = () => {
     email: "",
     phone: "",
     address: "",
+  });
+
+  // Password change state
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   useEffect(() => {
@@ -116,6 +127,43 @@ const Profile = () => {
       address: profile?.address || "",
     });
     setEditing(false);
+  };
+
+  const handleChangePassword = async () => {
+    // Validate passwords
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast({ title: "Please fill all password fields", variant: "destructive" });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({ title: "New password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({ title: "New passwords do not match", variant: "destructive" });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await authApi.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      toast({ title: "Password changed successfully!" });
+      setShowPasswordSection(false);
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      toast({ title: error.message || "Failed to change password", variant: "destructive" });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleCancelPasswordChange = () => {
+    setShowPasswordSection(false);
+    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
   };
 
   if (loading) {
@@ -270,15 +318,124 @@ const Profile = () => {
                     <p className="font-medium text-foreground">
                       {profile?.createdAt
                         ? new Date(profile.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
                         : "N/A"}
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Change Password Card */}
+            <div className="bg-card rounded-2xl p-6 shadow-lg border border-border">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-heading font-bold text-foreground">
+                  Security
+                </h2>
+                {!showPasswordSection && (
+                  <Button variant="outline" size="sm" onClick={() => setShowPasswordSection(true)}>
+                    <Lock className="w-4 h-4 mr-2" />
+                    Change Password
+                  </Button>
+                )}
+              </div>
+
+              {showPasswordSection ? (
+                <div className="space-y-4">
+                  {/* Current Password */}
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-1">Current Password</label>
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                        placeholder="Enter current password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* New Password */}
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-1">New Password</label>
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        placeholder="Enter new password (min 6 characters)"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm New Password */}
+                  <div>
+                    <label className="block text-sm text-muted-foreground mb-1">Confirm New Password</label>
+                    <Input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+
+                  {/* Forgot Password Link */}
+                  <p className="text-sm text-muted-foreground">
+                    Forgot your current password?{" "}
+                    <Link to="/forgot-password" className="text-accent hover:underline">
+                      Reset via email
+                    </Link>
+                  </p>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      variant="ghost"
+                      onClick={handleCancelPasswordChange}
+                      disabled={changingPassword}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="bg-accent hover:bg-accent/90"
+                    >
+                      {changingPassword ? (
+                        <span className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Changing...
+                        </span>
+                      ) : (
+                        "Update Password"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Keep your account secure by using a strong password. Click "Change Password" to update your credentials.
+                </p>
+              )}
             </div>
 
             {/* My Reviews Card */}
@@ -313,9 +470,8 @@ const Profile = () => {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-4 h-4 ${
-                                i < review.rating ? "fill-accent text-accent" : "text-muted-foreground"
-                              }`}
+                              className={`w-4 h-4 ${i < review.rating ? "fill-accent text-accent" : "text-muted-foreground"
+                                }`}
                             />
                           ))}
                         </div>

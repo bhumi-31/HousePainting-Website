@@ -239,14 +239,6 @@ exports.forgotPassword = async (req, res) => {
             });
         }
 
-        // Check if user is using Google OAuth
-        if (user.authProvider === 'google') {
-            return res.status(400).json({
-                success: false,
-                message: 'This account uses Google Sign-In. Please use Google to access your account.'
-            });
-        }
-
         // Generate reset token
         const resetToken = user.createPasswordResetToken();
         await user.save({ validateBeforeSave: false });
@@ -448,6 +440,64 @@ exports.googleAuth = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Google authentication failed',
+            error: error.message
+        });
+    }
+};
+
+
+// Change Password - For logged-in users to change their password
+exports.changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide current password and new password'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'New password must be at least 6 characters long'
+            });
+        }
+
+        // Get user with password field
+        const user = await User.findById(req.user.id).select('+password');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify current password
+        const isPasswordValid = await user.comparePassword(currentPassword);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Set new password
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Password changed successfully'
+        });
+    } catch (error) {
+        console.error('Change Password Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to change password',
             error: error.message
         });
     }

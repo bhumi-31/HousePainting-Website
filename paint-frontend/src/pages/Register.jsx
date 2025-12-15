@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, CheckCircle, Phone, Mail } from "lucide-react";
 import { Button, Input, useToast } from "../components/ui/index";
 import { useAuth } from "../context/AuthContext";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import logo from "../assets/logo.jpg";
+import heroImage from "../assets/exterior-painting.jpg";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -61,128 +63,219 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary py-12 px-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
-            <span className="text-accent-foreground font-heading font-bold text-xl">HP</span>
-          </div>
-          <div>
-            <p className="font-heading font-bold text-lg text-foreground">House</p>
-            <p className="font-heading font-bold text-lg text-accent -mt-1">Painters</p>
-          </div>
-        </Link>
+    <div className="min-h-screen flex">
+      {/* Left Side - Hero Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        <img
+          src={heroImage}
+          alt="Professional House Painting"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-transparent"></div>
 
-        <div className="bg-card rounded-2xl p-8 shadow-lg border border-border">
-          <h1 className="text-2xl font-heading font-bold text-foreground text-center mb-2">
-            Create Account
-          </h1>
-          <p className="text-muted-foreground text-center mb-8">
-            Sign up to get started with House Painters
-          </p>
+        {/* Content overlay */}
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
+          {/* Logo */}
+          <Link to="/">
+            <img src={logo} alt="Chandan House Painting" className="h-16 w-auto" />
+          </Link>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Hero Text */}
+          <div className="max-w-md">
+            <h1 className="text-4xl font-heading font-bold mb-6 leading-tight">
+              Join Our Growing Family of Happy Homeowners
+            </h1>
+            <p className="text-white/80 text-lg mb-8">
+              Create an account to get started with your home transformation journey.
+            </p>
+
+            {/* Features */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-accent" />
+                <span>Free, no-obligation quotes</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-accent" />
+                <span>Track your project progress</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-accent" />
+                <span>Exclusive member discounts</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Info */}
+          <div className="flex items-center gap-6 text-sm text-white/70">
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              <span>705-951-0764</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              <span>chandansingh3016@gmail.com</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Register Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-br from-secondary via-background to-secondary">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex justify-center mb-6">
+            <Link to="/">
+              <img src={logo} alt="Chandan House Painting" className="h-16 w-auto" />
+            </Link>
+          </div>
+
+          {/* Welcome Text */}
+          <div className="text-center mb-6">
+            <h2 className="text-3xl font-heading font-bold text-foreground mb-2">
+              Create Account
+            </h2>
+            <p className="text-muted-foreground">
+              Sign up to start your home transformation
+            </p>
+          </div>
+
+          {/* Google Sign-In */}
+          <div className="mb-5">
+            <GoogleSignInButton text="signup_with" />
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-background text-muted-foreground">or register with email</span>
+            </div>
+          </div>
+
+          {/* Registration Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Full Name</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Full Name
+              </label>
               <Input
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="John Doe"
+                className="h-11 bg-card border-border"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Email Address
+              </label>
               <Input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="you@example.com"
+                className="h-11 bg-card border-border"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Phone Number</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Phone Number
+              </label>
               <Input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
                 placeholder="1234567890"
+                className="h-11 bg-card border-border"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
-              <div className="relative">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="••••••••"
+                    className="h-11 bg-card border-border pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Confirm Password
+                </label>
                 <Input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
                   onChange={handleInputChange}
                   placeholder="••••••••"
+                  className="h-11 bg-card border-border"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Confirm Password</label>
-              <Input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            <Button type="submit" className="w-full btn-primary" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
-              <ArrowRight className="ml-2 w-4 h-4" />
+            <Button
+              type="submit"
+              className="w-full h-12 bg-accent hover:bg-accent/90 text-white font-semibold text-base shadow-lg shadow-accent/25 transition-all duration-300 hover:shadow-xl hover:shadow-accent/30 mt-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Creating account...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  Create Account
+                  <ArrowRight className="w-5 h-5" />
+                </span>
+              )}
             </Button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-card text-muted-foreground">or continue with</span>
-            </div>
-          </div>
-
-          {/* Google Sign-In */}
-          <GoogleSignInButton text="signup_with" />
-
+          {/* Sign In Link */}
           <p className="text-center text-muted-foreground mt-6">
             Already have an account?{" "}
             <Link to="/login" className="text-accent hover:underline font-semibold">
               Sign in
             </Link>
           </p>
-        </div>
 
-        <p className="text-center text-muted-foreground text-sm mt-6">
-          <Link to="/" className="hover:text-accent">
-            ← Back to Home
-          </Link>
-        </p>
+          {/* Back to Home */}
+          <p className="text-center mt-4">
+            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
+              ← Back to Home
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

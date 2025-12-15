@@ -1,6 +1,6 @@
 const express = require('express');
 
-const {register, login, getProfile, updateProfile, forgotPassword, resetPassword, googleAuth} = require('../controllers/authController');
+const { register, login, getProfile, updateProfile, forgotPassword, resetPassword, googleAuth, changePassword } = require('../controllers/authController');
 
 const { verifyToken } = require('../middleware/authMiddleware');
 
@@ -18,6 +18,7 @@ router.post('/google', googleAuth);
 
 router.get('/profile', verifyToken, getProfile);
 router.put('/profile', verifyToken, updateProfile);
+router.put('/change-password', verifyToken, changePassword);
 
 module.exports = router;
 

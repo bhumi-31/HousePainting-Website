@@ -19,21 +19,23 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    environment:
-      NODE_ENV: production
-      PORT: 8000
-      MONGO_URI: ${MONGO_URI}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRE: ${JWT_EXPIRE}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      EMAIL_HOST: ${EMAIL_HOST}
-      EMAIL_PORT: ${EMAIL_PORT}
-      EMAIL_USER: ${EMAIL_USER}
-      EMAIL_PASS: ${EMAIL_PASS}
-      EMAIL_FROM: ${EMAIL_FROM}
-      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN}
+    env_file:
+      - ./paint-backend/.env
+    # environment:
+    #   NODE_ENV: production
+    #   PORT: 8000
+    #   MONGO_URI: ${MONGO_URI}
+    #   JWT_SECRET: ${JWT_SECRET}
+    #   JWT_EXPIRE: ${JWT_EXPIRE}
+    #   CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+    #   CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+    #   CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    #   EMAIL_HOST: ${EMAIL_HOST}
+    #   EMAIL_PORT: ${EMAIL_PORT}
+    #   EMAIL_USER: ${EMAIL_USER}
+    #   EMAIL_PASS: ${EMAIL_PASS}
+    #   EMAIL_FROM: ${EMAIL_FROM}
+    #   HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN}
     networks:
       - paint-network
 
@@ -44,6 +46,8 @@ services:
     restart: unless-stopped
     ports:
       - "5173:80"
+    env_file:
+      - ./paint-frontend/.env
     depends_on:
       - backend
     networks:
