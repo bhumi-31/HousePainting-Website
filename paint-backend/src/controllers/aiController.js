@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // AI Room Visualization Controller
-// Uses Google Gemini for image generation
+// Uses Google Gemini for image generation and editing
 
 const visualizeRoom = async (req, res) => {
   try {
@@ -25,16 +25,22 @@ const visualizeRoom = async (req, res) => {
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-    // Enhanced prompt for better room visualization
-    const enhancedPrompt = `Generate a photorealistic interior design image: ${prompt}. Professional home interior photography, high quality, realistic lighting, modern design, 4k resolution, detailed textures.`;
+    // Use Gemini 2.0 Flash for image generation
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      generationConfig: {
+        responseModalities: ["image", "text"]
+      }
+    });
 
-    // For image editing (if user uploaded an image)
+    // If user uploaded an image - edit it
     if (imageBase64) {
       try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
         // Extract base64 data without the data URL prefix
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+        // Create the prompt for image editing
+        const editPrompt = `Edit this room image: ${prompt}. Keep the same room structure, perspective, and lighting, but apply the requested changes to the walls and decor. Make it look realistic and professional like a real painted room.`;
 
         const result = await model.generateContent([
           {
@@ -43,27 +49,49 @@ const visualizeRoom = async (req, res) => {
               data: base64Data
             }
           },
-          `Analyze this room and describe how it would look with the following changes: ${prompt}. Describe the colors, textures, and overall aesthetic in detail.`
+          editPrompt
         ]);
 
         const response = await result.response;
-        const description = response.text();
-
-        // Use the description to generate new image
-        const imageModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-        const imageResult = await imageModel.generateContent({
-          contents: [{
-            parts: [{ text: enhancedPrompt + " " + description.substring(0, 500) }]
-          }],
-          generationConfig: {
-            responseModalities: ["image", "text"],
-          }
-        });
-
-        const imageResponse = await imageResult.response;
 
         // Check if image was generated
-        for (const part of imageResponse.candidates[0].content.parts) {
+        if (response.candidates && response.candidates[0]?.content?.parts) {
+          for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+              const generatedImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+
+              return res.json({
+                success: true,
+                message: 'Room edited successfully!',
+                image: generatedImageBase64,
+                prompt: prompt,
+                model: 'gemini-2.0-flash',
+                type: 'edit'
+              });
+            }
+          }
+        }
+
+        // If no image returned, try text-to-image as fallback
+        console.log('Image editing did not return image, trying generation...');
+
+      } catch (editError) {
+        console.error('Image editing error:', editError.message);
+        // Fall through to text-to-image generation
+      }
+    }
+
+    // Text-to-image generation (no uploaded image)
+    try {
+      const enhancedPrompt = `Generate a photorealistic interior design image: ${prompt}. Professional home interior photography, high quality, realistic lighting, modern design, 4k resolution, detailed textures, freshly painted walls.`;
+
+      const result = await model.generateContent(enhancedPrompt);
+
+      const response = await result.response;
+
+      // Check if image was generated
+      if (response.candidates && response.candidates[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
           if (part.inlineData) {
             const generatedImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 
@@ -72,58 +100,26 @@ const visualizeRoom = async (req, res) => {
               message: 'Room visualization generated successfully!',
               image: generatedImageBase64,
               prompt: prompt,
-              model: 'gemini'
+              model: 'gemini-2.0-flash',
+              type: 'generate'
             });
           }
         }
-      } catch (editError) {
-        console.error('Image editing error:', editError.message);
-        // Fall through to text-to-image generation
-      }
-    }
-
-    // Text-to-image generation using Gemini
-    try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
-      const result = await model.generateContent({
-        contents: [{
-          parts: [{ text: enhancedPrompt }]
-        }],
-        generationConfig: {
-          responseModalities: ["image", "text"],
-        }
-      });
-
-      const response = await result.response;
-
-      // Check if image was generated
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          const generatedImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-
-          return res.json({
-            success: true,
-            message: 'Room visualization generated successfully!',
-            image: generatedImageBase64,
-            prompt: prompt,
-            model: 'gemini'
-          });
-        }
       }
 
-      // If no image in response, return text description
+      // If still no image, return error with text response
+      const textResponse = response.text ? response.text() : 'No response';
       return res.status(500).json({
         success: false,
-        message: 'Image generation not available. Please try again.',
-        description: response.text()
+        message: 'Could not generate image. The AI returned a text response instead.',
+        textResponse: textResponse.substring(0, 500)
       });
 
     } catch (genError) {
-      console.error('Gemini generation error:', genError.message);
+      console.error('Gemini generation error:', genError);
       return res.status(500).json({
         success: false,
-        message: 'Failed to generate image. Please try again later.'
+        message: 'Failed to generate image: ' + genError.message
       });
     }
 
@@ -141,7 +137,6 @@ const getColorSuggestions = async (req, res) => {
   try {
     const { roomType, mood } = req.query;
 
-    // Predefined color palettes based on room type and mood
     const colorPalettes = {
       livingRoom: {
         cozy: ['Warm Beige #D4B896', 'Soft Terracotta #E07B54', 'Creamy White #FFF8E7', 'Sage Green #9CAF88'],
