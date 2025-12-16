@@ -18,6 +18,8 @@ import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import RoomVisualizer from "./pages/RoomVisualizer";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 // Admin Pages
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -53,6 +55,8 @@ const App = () => (
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/visualizer" element={<RoomVisualizer />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>

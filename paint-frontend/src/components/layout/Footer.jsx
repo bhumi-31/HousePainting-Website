@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
 import logo from "../../assets/logo.jpg";
 
 const Footer = () => {
@@ -24,9 +24,6 @@ const Footer = () => {
               </a>
               <a href="#" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
                 <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
-                <Linkedin className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -93,8 +90,8 @@ const Footer = () => {
               © {new Date().getFullYear()} House Painters. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <a href="#" className="text-primary-foreground/60 hover:text-accent transition-colors">Privacy Policy</a>
-              <a href="#" className="text-primary-foreground/60 hover:text-accent transition-colors">Terms of Service</a>
+              <Link to="/privacy-policy" className="text-primary-foreground/60 hover:text-accent transition-colors">Privacy Policy</Link>
+              <Link to="/terms-of-service" className="text-primary-foreground/60 hover:text-accent transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>
