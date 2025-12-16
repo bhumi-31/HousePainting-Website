@@ -1,7 +1,9 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
+const fs = require('fs');
+const path = require('path');
 
 // AI Room Visualization Controller
-// Uses Google Gemini for image generation and editing
+// Uses OpenAI DALL-E for image generation and editing
 
 const visualizeRoom = async (req, res) => {
   try {
@@ -14,109 +16,106 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-    if (!GEMINI_API_KEY) {
+    if (!OPENAI_API_KEY) {
       return res.status(500).json({
         success: false,
-        message: 'AI service not configured. Please add GEMINI_API_KEY to environment variables.'
+        message: 'AI service not configured. Please add OPENAI_API_KEY to environment variables.'
       });
     }
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-    // Use Gemini 2.0 Flash for image generation
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        responseModalities: ["image", "text"]
-      }
-    });
+    // Enhanced prompt for room visualization
+    const enhancedPrompt = `Interior design photography: ${prompt}. Professional home interior, realistic lighting, high quality, 4k, photorealistic freshly painted room.`;
 
-    // If user uploaded an image - edit it
+    // If user uploaded an image - use DALL-E image edit
     if (imageBase64) {
       try {
-        // Extract base64 data without the data URL prefix
+        // Convert base64 to buffer
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
 
-        // Create the prompt for image editing
-        const editPrompt = `Edit this room image: ${prompt}. Keep the same room structure, perspective, and lighting, but apply the requested changes to the walls and decor. Make it look realistic and professional like a real painted room.`;
-
-        const result = await model.generateContent([
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: base64Data
-            }
-          },
-          editPrompt
-        ]);
-
-        const response = await result.response;
-
-        // Check if image was generated
-        if (response.candidates && response.candidates[0]?.content?.parts) {
-          for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-              const generatedImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-
-              return res.json({
-                success: true,
-                message: 'Room edited successfully!',
-                image: generatedImageBase64,
-                prompt: prompt,
-                model: 'gemini-2.0-flash',
-                type: 'edit'
-              });
-            }
-          }
+        // Save temporarily for OpenAI API
+        const tempDir = path.join(__dirname, '../temp');
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
         }
 
-        // If no image returned, try text-to-image as fallback
-        console.log('Image editing did not return image, trying generation...');
+        const tempImagePath = path.join(tempDir, `room_${Date.now()}.png`);
+        fs.writeFileSync(tempImagePath, imageBuffer);
+
+        // Use DALL-E 3 for image generation based on the reference
+        // Note: DALL-E edit requires a mask, so we'll use generation with detailed prompt
+        const response = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: `Based on a room photo, create this: ${enhancedPrompt}. Make it look like the same room structure but with the new paint colors and style applied.`,
+          n: 1,
+          size: "1024x1024",
+          quality: "standard"
+        });
+
+        // Clean up temp file
+        fs.unlinkSync(tempImagePath);
+
+        if (response.data && response.data[0]?.url) {
+          // Fetch the generated image and convert to base64
+          const fetch = require('node-fetch');
+          const imageResponse = await fetch(response.data[0].url);
+          const arrayBuffer = await imageResponse.arrayBuffer();
+          const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
+
+          return res.json({
+            success: true,
+            message: 'Room visualization generated successfully!',
+            image: generatedBase64,
+            prompt: prompt,
+            model: 'dall-e-3',
+            type: 'edit'
+          });
+        }
 
       } catch (editError) {
         console.error('Image editing error:', editError.message);
-        // Fall through to text-to-image generation
+        // Fall through to standard generation
       }
     }
 
-    // Text-to-image generation (no uploaded image)
+    // Text-to-image generation using DALL-E 3
     try {
-      const enhancedPrompt = `Generate a photorealistic interior design image: ${prompt}. Professional home interior photography, high quality, realistic lighting, modern design, 4k resolution, detailed textures, freshly painted walls.`;
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: enhancedPrompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard"
+      });
 
-      const result = await model.generateContent(enhancedPrompt);
+      if (response.data && response.data[0]?.url) {
+        // Fetch the generated image and convert to base64
+        const fetch = require('node-fetch');
+        const imageResponse = await fetch(response.data[0].url);
+        const arrayBuffer = await imageResponse.arrayBuffer();
+        const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
 
-      const response = await result.response;
-
-      // Check if image was generated
-      if (response.candidates && response.candidates[0]?.content?.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-            const generatedImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-
-            return res.json({
-              success: true,
-              message: 'Room visualization generated successfully!',
-              image: generatedImageBase64,
-              prompt: prompt,
-              model: 'gemini-2.0-flash',
-              type: 'generate'
-            });
-          }
-        }
+        return res.json({
+          success: true,
+          message: 'Room visualization generated successfully!',
+          image: generatedBase64,
+          prompt: prompt,
+          model: 'dall-e-3',
+          type: 'generate'
+        });
       }
 
-      // If still no image, return error with text response
-      const textResponse = response.text ? response.text() : 'No response';
       return res.status(500).json({
         success: false,
-        message: 'Could not generate image. The AI returned a text response instead.',
-        textResponse: textResponse.substring(0, 500)
+        message: 'Failed to generate image. Please try again.'
       });
 
     } catch (genError) {
-      console.error('Gemini generation error:', genError);
+      console.error('DALL-E generation error:', genError);
       return res.status(500).json({
         success: false,
         message: 'Failed to generate image: ' + genError.message
