@@ -52,9 +52,10 @@ const ServicesSection = () => {
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, index) => (
-            <div
+            <Link
+              to="/services"
               key={service.title}
-              className="group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100"
+              className="group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 cursor-pointer"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Image Container */}
@@ -65,12 +66,12 @@ const ServicesSection = () => {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                
+
                 {/* Floating Icon */}
                 <div className={`absolute top-4 right-4 w-14 h-14 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
                   <service.icon className="w-7 h-7 text-white" />
                 </div>
-                
+
                 {/* Title on Image */}
                 <div className="absolute bottom-4 left-6 right-6">
                   <h3 className="text-2xl font-heading font-bold text-white">
@@ -78,11 +79,11 @@ const ServicesSection = () => {
                   </h3>
                 </div>
               </div>
-              
+
               {/* Content */}
               <div className="p-6">
                 <p className="text-gray-600 mb-5 leading-relaxed">{service.description}</p>
-                
+
                 {/* Features List */}
                 <ul className="space-y-2 mb-6">
                   {service.features.map((feature, i) => (
@@ -92,16 +93,13 @@ const ServicesSection = () => {
                     </li>
                   ))}
                 </ul>
-                
-                <Link
-                  to="/services"
-                  className="inline-flex items-center gap-2 text-accent font-semibold group/link hover:gap-3 transition-all"
-                >
-                  Learn More 
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover/link:translate-x-1" />
-                </Link>
+
+                <span className="inline-flex items-center gap-2 text-accent font-semibold group/link hover:gap-3 transition-all">
+                  Learn More
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
