@@ -1,9 +1,7 @@
-const OpenAI = require('openai');
-const fs = require('fs');
-const path = require('path');
+const Replicate = require('replicate');
 
 // AI Room Visualization Controller
-// Uses OpenAI DALL-E for image generation and editing
+// Uses Replicate for image generation and editing
 
 const visualizeRoom = async (req, res) => {
   try {
@@ -16,86 +14,82 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-    if (!OPENAI_API_KEY) {
+    if (!REPLICATE_API_TOKEN) {
       return res.status(500).json({
         success: false,
-        message: 'AI service not configured. Please add OPENAI_API_KEY to environment variables.'
+        message: 'AI service not configured. Please add REPLICATE_API_TOKEN to environment variables.'
       });
     }
 
-    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    const replicate = new Replicate({ auth: REPLICATE_API_TOKEN });
 
     // Enhanced prompt for room visualization
-    const enhancedPrompt = `Interior design photography: ${prompt}. Professional home interior, realistic lighting, high quality, 4k, photorealistic freshly painted room.`;
+    const enhancedPrompt = `Interior design photography: ${prompt}. Professional home interior, realistic lighting, high quality, 4k, photorealistic freshly painted room, architectural photography.`;
 
-    // If user uploaded an image - use DALL-E image edit
+    // If user uploaded an image - use image-to-image with instruction
     if (imageBase64) {
       try {
-        // Convert base64 to buffer
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-        const imageBuffer = Buffer.from(base64Data, 'base64');
+        // Use instruction-based image editing model
+        const output = await replicate.run(
+          "timothybrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f",
+          {
+            input: {
+              image: imageBase64,
+              prompt: `Change the wall paint color: ${prompt}. Keep the room structure, furniture and lighting the same. Only change the wall colors as described.`,
+              num_inference_steps: 50,
+              guidance_scale: 7.5,
+              image_guidance_scale: 1.5
+            }
+          }
+        );
 
-        // Save temporarily for OpenAI API
-        const tempDir = path.join(__dirname, '../temp');
-        if (!fs.existsSync(tempDir)) {
-          fs.mkdirSync(tempDir, { recursive: true });
-        }
-
-        const tempImagePath = path.join(tempDir, `room_${Date.now()}.png`);
-        fs.writeFileSync(tempImagePath, imageBuffer);
-
-        // Use DALL-E 3 for image generation based on the reference
-        // Note: DALL-E edit requires a mask, so we'll use generation with detailed prompt
-        const response = await openai.images.generate({
-          model: "dall-e-3",
-          prompt: `Based on a room photo, create this: ${enhancedPrompt}. Make it look like the same room structure but with the new paint colors and style applied.`,
-          n: 1,
-          size: "1024x1024",
-          quality: "standard"
-        });
-
-        // Clean up temp file
-        fs.unlinkSync(tempImagePath);
-
-        if (response.data && response.data[0]?.url) {
+        if (output && output[0]) {
           // Fetch the generated image and convert to base64
           const fetch = require('node-fetch');
-          const imageResponse = await fetch(response.data[0].url);
+          const imageUrl = Array.isArray(output) ? output[0] : output;
+          const imageResponse = await fetch(imageUrl);
           const arrayBuffer = await imageResponse.arrayBuffer();
           const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
 
           return res.json({
             success: true,
-            message: 'Room visualization generated successfully!',
+            message: 'Room edited successfully!',
             image: generatedBase64,
             prompt: prompt,
-            model: 'dall-e-3',
+            model: 'instruct-pix2pix',
             type: 'edit'
           });
         }
 
       } catch (editError) {
         console.error('Image editing error:', editError.message);
-        // Fall through to standard generation
+        // Fall through to text-to-image generation
       }
     }
 
-    // Text-to-image generation using DALL-E 3
+    // Text-to-image generation using SDXL
     try {
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: enhancedPrompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "standard"
-      });
+      const output = await replicate.run(
+        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        {
+          input: {
+            prompt: enhancedPrompt,
+            negative_prompt: "blurry, low quality, distorted, ugly, bad anatomy",
+            width: 1024,
+            height: 768,
+            num_inference_steps: 30,
+            guidance_scale: 7.5
+          }
+        }
+      );
 
-      if (response.data && response.data[0]?.url) {
+      if (output && output[0]) {
         // Fetch the generated image and convert to base64
         const fetch = require('node-fetch');
-        const imageResponse = await fetch(response.data[0].url);
+        const imageUrl = Array.isArray(output) ? output[0] : output;
+        const imageResponse = await fetch(imageUrl);
         const arrayBuffer = await imageResponse.arrayBuffer();
         const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
 
@@ -104,7 +98,7 @@ const visualizeRoom = async (req, res) => {
           message: 'Room visualization generated successfully!',
           image: generatedBase64,
           prompt: prompt,
-          model: 'dall-e-3',
+          model: 'sdxl',
           type: 'generate'
         });
       }
@@ -115,7 +109,7 @@ const visualizeRoom = async (req, res) => {
       });
 
     } catch (genError) {
-      console.error('DALL-E generation error:', genError);
+      console.error('Replicate generation error:', genError);
       return res.status(500).json({
         success: false,
         message: 'Failed to generate image: ' + genError.message
