@@ -31,6 +31,7 @@ import AdminServices from "./pages/admin/Services";
 import AdminContacts from "./pages/admin/Contacts";
 
 import NotFound from "./pages/NotFound";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
     <AuthProvider>
       <ToastProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />

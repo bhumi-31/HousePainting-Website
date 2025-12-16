@@ -88,7 +88,7 @@ const Services = () => {
       const params = { isActive: 'true' };
       if (category) params.category = category;
       if (search) params.search = search;
-      
+
       const response = await servicesApi.getAll(params);
       if (response.services && response.services.length > 0) {
         setServices(response.services);
@@ -132,11 +132,10 @@ const Services = () => {
                 <button
                   key={filter.value}
                   onClick={() => setCategory(filter.value)}
-                  className={`px-6 py-2 rounded-full font-medium transition-colors ${
-                    category === filter.value
+                  className={`px-6 py-2 rounded-full font-medium transition-colors ${category === filter.value
                       ? "bg-accent text-accent-foreground"
                       : "bg-secondary text-foreground hover:bg-accent/20"
-                  }`}
+                    }`}
                 >
                   {filter.label}
                 </button>
@@ -165,63 +164,62 @@ const Services = () => {
               ))}
             </div>
           ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service) => (
-              <div
-                key={service._id}
-                className="group bg-card rounded-2xl overflow-hidden shadow-lg card-hover border border-border"
-              >
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={service.images?.[0] || exteriorImage}
-                    alt={service.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute top-4 right-4 bg-accent text-accent-foreground px-4 py-1 rounded-full text-sm font-semibold">
-                    {service.category}
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-heading font-bold text-foreground mb-2">
-                    {service.name}
-                  </h3>
-                  <p className="text-muted-foreground mb-4 line-clamp-2">{service.description}</p>
-                  
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {service.features?.slice(0, 3).map((feature) => (
-                      <span
-                        key={feature}
-                        className="px-2 py-1 bg-secondary text-xs rounded-full text-foreground"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                    {service.features?.length > 3 && (
-                      <span className="px-2 py-1 bg-secondary text-xs rounded-full text-muted-foreground">
-                        +{service.features.length - 3} more
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Est. Timeline</p>
-                      <p className="text-sm font-heading font-bold text-accent">
-                        {service.estimatedTimeline || service.duration || "Varies"}
-                      </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {services.map((service) => (
+                <Link
+                  to={`/services/${service._id}`}
+                  key={service._id}
+                  className="group bg-card rounded-2xl overflow-hidden shadow-lg card-hover border border-border cursor-pointer"
+                >
+                  <div className="relative h-64 overflow-hidden">
+                    <img
+                      src={service.images?.[0] || exteriorImage}
+                      alt={service.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute top-4 right-4 bg-accent text-accent-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                      {service.category}
                     </div>
-                    <Link to={`/services/${service._id}`}>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-heading font-bold text-foreground mb-2 group-hover:text-accent transition-colors">
+                      {service.name}
+                    </h3>
+                    <p className="text-muted-foreground mb-4 line-clamp-2">{service.description}</p>
+
+                    {/* Features */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {service.features?.slice(0, 3).map((feature) => (
+                        <span
+                          key={feature}
+                          className="px-2 py-1 bg-secondary text-xs rounded-full text-foreground"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                      {service.features?.length > 3 && (
+                        <span className="px-2 py-1 bg-secondary text-xs rounded-full text-muted-foreground">
+                          +{service.features.length - 3} more
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Est. Timeline</p>
+                        <p className="text-sm font-heading font-bold text-accent">
+                          {service.estimatedTimeline || service.duration || "Varies"}
+                        </p>
+                      </div>
                       <Button className="btn-primary text-sm px-4 py-2">
                         Learn More
                         <ArrowRight className="ml-1 w-3 h-3" />
                       </Button>
-                    </Link>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
           )}
         </div>
       </section>

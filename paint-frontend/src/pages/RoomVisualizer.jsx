@@ -161,42 +161,13 @@ const RoomVisualizer = () => {
       {/* Main Content */}
       <section className="section-padding">
         <div className="container-custom">
-          
-          {/* Login Required Check */}
-          {!user ? (
-            <div className="max-w-md mx-auto text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Lock className="w-10 h-10 text-primary" />
-              </div>
-              <h2 className="text-2xl font-heading font-bold text-foreground mb-4">
-                Login Required
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                Please log in or create an account to use the AI Room Visualizer. This helps us save your designs and provide you with the best experience.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/login" state={{ from: '/visualizer' }}>
-                  <Button className="btn-primary w-full sm:w-auto">
-                    Log In
-                  </Button>
-                </Link>
-                <Link to="/register" state={{ from: '/visualizer' }}>
-                  <Button variant="outline" className="w-full sm:w-auto">
-                    Create Account
-                  </Button>
-                </Link>
-              </div>
-              <p className="text-sm text-muted-foreground mt-6">
-                Have questions? <a href="tel:7059510764" className="text-accent hover:underline">Call us directly</a>
-              </p>
-            </div>
-          ) : (
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            
+
             {/* Left Column - Settings & Tips */}
             <div className="space-y-6">
               <h2 className="text-2xl font-heading font-bold text-foreground mb-6">How It Works</h2>
-              
+
               {/* Steps */}
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -270,7 +241,7 @@ const RoomVisualizer = () => {
             <div className="lg:col-span-2">
               <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
                 <h2 className="text-2xl font-heading font-bold text-foreground mb-6">Create Your Visualization</h2>
-                
+
                 <div className="space-y-6">
                   {/* Room & Style Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -432,7 +403,6 @@ const RoomVisualizer = () => {
               </div>
             </div>
           </div>
-          )}
         </div>
       </section>
     </Layout>

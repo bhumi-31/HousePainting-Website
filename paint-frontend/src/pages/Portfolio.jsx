@@ -77,7 +77,7 @@ const Portfolio = () => {
       setLoading(true);
       const params = {};
       if (roomFilter) params.roomType = roomFilter;
-      
+
       const response = await portfolioApi.getAll(params);
       if (response.projects && response.projects.length > 0) {
         setProjects(response.projects);
@@ -114,11 +114,10 @@ const Portfolio = () => {
               <button
                 key={filter.value}
                 onClick={() => setRoomFilter(filter.value)}
-                className={`px-6 py-2 rounded-full font-medium transition-colors ${
-                  roomFilter === filter.value
+                className={`px-6 py-2 rounded-full font-medium transition-colors ${roomFilter === filter.value
                     ? "bg-accent text-accent-foreground"
                     : "bg-secondary text-foreground hover:bg-accent/20"
-                }`}
+                  }`}
               >
                 {filter.label}
               </button>
@@ -137,70 +136,69 @@ const Portfolio = () => {
               ))}
             </div>
           ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project) => (
-              <div
-                key={project._id}
-                className="group"
-              >
-                <div className="bg-card rounded-2xl overflow-hidden shadow-lg card-hover border border-border">
-                  {/* Before/After Comparison with Hover Effect */}
-                  <div className="relative h-64 overflow-hidden cursor-pointer">
-                    {/* After Image (default) */}
-                    <img
-                      src={project.afterImage || exteriorImage}
-                      alt={`${project.title} - After`}
-                      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-0"
-                    />
-                    {/* Before Image (on hover) */}
-                    <img
-                      src={project.beforeImage || heroImage}
-                      alt={`${project.title} - Before`}
-                      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100"
-                    />
-                    {/* Labels */}
-                    <div className="absolute top-4 left-4 bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-semibold transition-opacity duration-300 group-hover:opacity-0">
-                      After
-                    </div>
-                    <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold transition-opacity duration-300 opacity-0 group-hover:opacity-100">
-                      Before
-                    </div>
-                    <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs flex items-center gap-1">
-                      <Eye className="w-3 h-3" /> {project.viewCount || project.views || 0}
-                    </div>
-                    {/* Hover Instruction */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="bg-background/90 backdrop-blur-sm text-foreground px-4 py-2 rounded-full text-sm font-medium">
-                        Hover to see transformation
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-heading font-bold text-foreground mb-2 group-hover:text-accent transition-colors">
-                      {project.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm mb-3">{project.location}</p>
-                    <div className="flex gap-2 mb-4">
-                      {project.colors?.map((color) => (
-                        <span
-                          key={color}
-                          className="px-3 py-1 bg-secondary text-xs rounded-full"
-                        >
-                          {color}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {projects.map((project) => (
+                <Link
+                  to={`/portfolio/${project._id}`}
+                  key={project._id}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-card rounded-2xl overflow-hidden shadow-lg card-hover border border-border">
+                    {/* Before/After Comparison with Hover Effect */}
+                    <div className="relative h-64 overflow-hidden cursor-pointer">
+                      {/* After Image (default) */}
+                      <img
+                        src={project.afterImage || exteriorImage}
+                        alt={`${project.title} - After`}
+                        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-0"
+                      />
+                      {/* Before Image (on hover) */}
+                      <img
+                        src={project.beforeImage || heroImage}
+                        alt={`${project.title} - Before`}
+                        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100"
+                      />
+                      {/* Labels */}
+                      <div className="absolute top-4 left-4 bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-semibold transition-opacity duration-300 group-hover:opacity-0">
+                        After
+                      </div>
+                      <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold transition-opacity duration-300 opacity-0 group-hover:opacity-100">
+                        Before
+                      </div>
+                      <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                        <Eye className="w-3 h-3" /> {project.viewCount || project.views || 0}
+                      </div>
+                      {/* Hover Instruction */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span className="bg-background/90 backdrop-blur-sm text-foreground px-4 py-2 rounded-full text-sm font-medium">
+                          Hover to see transformation
                         </span>
-                      ))}
+                      </div>
                     </div>
-                    <Link to={`/portfolio/${project._id}`}>
+                    <div className="p-6">
+                      <h3 className="text-xl font-heading font-bold text-foreground mb-2 group-hover:text-accent transition-colors">
+                        {project.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">{project.location}</p>
+                      <div className="flex gap-2 mb-4">
+                        {project.colors?.map((color) => (
+                          <span
+                            key={color}
+                            className="px-3 py-1 bg-secondary text-xs rounded-full"
+                          >
+                            {color}
+                          </span>
+                        ))}
+                      </div>
                       <Button className="w-full btn-primary">
                         View Details
                         <ArrowRight className="ml-2 w-4 h-4" />
                       </Button>
-                    </Link>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
           )}
         </div>
       </section>

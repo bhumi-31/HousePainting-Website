@@ -1,7 +1,5 @@
 const Replicate = require('replicate');
-
-// AI Room Visualization Controller
-// Uses Replicate for image generation and editing
+const fetch = require('node-fetch');
 
 const visualizeRoom = async (req, res) => {
   try {
@@ -25,107 +23,173 @@ const visualizeRoom = async (req, res) => {
 
     const replicate = new Replicate({ auth: REPLICATE_API_TOKEN });
 
-    // Enhanced prompt for room visualization
-    const enhancedPrompt = `Interior design photography: ${prompt}. Professional home interior, realistic lighting, high quality, 4k, photorealistic freshly painted room, architectural photography.`;
-
-    // If user uploaded an image - use image-to-image with instruction
+    // IMAGE EDITING: Only change wall colors, keep everything else EXACTLY same
     if (imageBase64) {
       try {
-        // Use instruction-based image editing model
+        console.log('🎨 Repainting walls on your uploaded image...');
+
+        // VERY SPECIFIC PROMPT: Only repaint walls, nothing else!
+        const editPrompt = `repaint the walls with ${prompt}`;
+        const negativePrompt = "add furniture, add objects, add decor, change layout, change floor, add sofa, add table, add chairs, add anything new, different room";
+
         const output = await replicate.run(
           "timothybrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f",
           {
             input: {
               image: imageBase64,
-              prompt: `Change the wall paint color: ${prompt}. Keep the room structure, furniture and lighting the same. Only change the wall colors as described.`,
-              num_inference_steps: 50,
+              prompt: editPrompt,
+              negative_prompt: negativePrompt,
+              num_inference_steps: 100,
               guidance_scale: 7.5,
-              image_guidance_scale: 1.5
+              image_guidance_scale: 2.5,  // VERY HIGH = stay extremely close to original
+              num_outputs: 1
             }
           }
         );
 
-        if (output && output[0]) {
-          // Fetch the generated image and convert to base64
-          const fetch = require('node-fetch');
-          const imageUrl = Array.isArray(output) ? output[0] : output;
-          const imageResponse = await fetch(imageUrl);
-          const arrayBuffer = await imageResponse.arrayBuffer();
-          const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
+        console.log('✅ Wall repainting complete');
 
-          return res.json({
-            success: true,
-            message: 'Room edited successfully!',
-            image: generatedBase64,
-            prompt: prompt,
-            model: 'instruct-pix2pix',
-            type: 'edit'
-          });
+        let imageUrl;
+        if (Array.isArray(output) && output.length > 0) {
+          imageUrl = output[0];
+        } else if (typeof output === 'string') {
+          imageUrl = output;
+        } else {
+          throw new Error('Invalid output from model');
         }
 
-      } catch (editError) {
-        console.error('Image editing error:', editError.message);
-        // Fall through to text-to-image generation
-      }
-    }
-
-    // Text-to-image generation using SDXL
-    try {
-      const output = await replicate.run(
-        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-        {
-          input: {
-            prompt: enhancedPrompt,
-            negative_prompt: "blurry, low quality, distorted, ugly, bad anatomy",
-            width: 1024,
-            height: 768,
-            num_inference_steps: 30,
-            guidance_scale: 7.5
-          }
-        }
-      );
-
-      if (output && output[0]) {
-        // Fetch the generated image and convert to base64
-        const fetch = require('node-fetch');
-        const imageUrl = Array.isArray(output) ? output[0] : output;
         const imageResponse = await fetch(imageUrl);
+        if (!imageResponse.ok) {
+          throw new Error('Failed to fetch edited image');
+        }
+        
         const arrayBuffer = await imageResponse.arrayBuffer();
         const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
 
         return res.json({
           success: true,
-          message: 'Room visualization generated successfully!',
+          message: 'Walls repainted! Your room layout is preserved. 🎨',
           image: generatedBase64,
           prompt: prompt,
-          model: 'sdxl',
-          type: 'generate'
+          model: 'instruct-pix2pix',
+          type: 'edit'
         });
+
+      } catch (editError) {
+        console.error('❌ Image editing error:', editError.message);
+
+        if (editError.message.includes('503') || editError.message.includes('loading')) {
+          return res.status(503).json({
+            success: false,
+            message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
+            isLoading: true,
+            estimatedWait: 25
+          });
+        }
+
+        // Fallback: Use SDXL with VERY LOW prompt_strength
+        try {
+          console.log('🔄 Trying alternative method with stronger image preservation...');
+
+          const altPrompt = `${prompt} walls`;
+          
+          const altOutput = await replicate.run(
+            "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+            {
+              input: {
+                image: imageBase64,
+                prompt: altPrompt,
+                negative_prompt: "furniture, sofa, table, chairs, objects, decor, add items, different layout",
+                prompt_strength: 0.25,  // VERY LOW = barely change the image
+                num_inference_steps: 50,
+                guidance_scale: 6,
+              }
+            }
+          );
+
+          const altUrl = Array.isArray(altOutput) ? altOutput[0] : altOutput;
+          const altResponse = await fetch(altUrl);
+          const altBuffer = await altResponse.arrayBuffer();
+          const altBase64 = `data:image/png;base64,${Buffer.from(altBuffer).toString('base64')}`;
+
+          return res.json({
+            success: true,
+            message: 'Wall color preview generated! 🎨',
+            image: altBase64,
+            prompt: prompt,
+            model: 'sdxl-img2img',
+            type: 'edit'
+          });
+
+        } catch (altError) {
+          console.error('❌ Alternative method failed:', altError.message);
+          
+          // If both fail, generate new room as last resort
+          console.log('⚠️ Both methods failed, generating new room...');
+        }
       }
+    }
 
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to generate image. Please try again.'
-      });
+    // TEXT-TO-IMAGE GENERATION (when no image uploaded OR editing failed)
+    console.log('🎨 Generating new room from description...');
 
-    } catch (genError) {
-      console.error('Replicate generation error:', genError);
-      return res.status(500).json({
+    const enhancedPrompt = `Professional interior design photo: ${prompt}. Empty room, clean walls, wooden floor, natural light, high quality, 4k, photorealistic architectural photography.`;
+
+    const output = await replicate.run(
+      "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+      {
+        input: {
+          prompt: enhancedPrompt,
+          negative_prompt: "blurry, low quality, distorted, cartoon, painting",
+          width: 1024,
+          height: 768,
+          num_inference_steps: 30,
+          guidance_scale: 7.5,
+        }
+      }
+    );
+
+    const imageUrl = Array.isArray(output) ? output[0] : output;
+    
+    if (!imageUrl) {
+      throw new Error('No image generated');
+    }
+
+    const imageResponse = await fetch(imageUrl);
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
+
+    return res.json({
+      success: true,
+      message: imageBase64 
+        ? 'Generated new room (original image editing unavailable)' 
+        : 'New room visualization created! 🎨',
+      image: generatedBase64,
+      prompt: prompt,
+      model: 'sdxl',
+      type: 'generate'
+    });
+
+  } catch (error) {
+    console.error('💥 Visualization Error:', error);
+    
+    if (error.message.includes('503') || error.message.includes('loading')) {
+      return res.status(503).json({
         success: false,
-        message: 'Failed to generate image: ' + genError.message
+        message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
+        isLoading: true,
+        estimatedWait: 25
       });
     }
 
-  } catch (error) {
-    console.error('AI Visualization Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to generate visualization. Please try again.'
+      message: error.message || 'Failed to process image. Please try again.'
     });
   }
 };
 
-// Get available paint color suggestions
+// Get color suggestions
 const getColorSuggestions = async (req, res) => {
   try {
     const { roomType, mood } = req.query;
@@ -155,7 +219,6 @@ const getColorSuggestions = async (req, res) => {
 
     const room = roomType || 'livingRoom';
     const style = mood || 'modern';
-
     const colors = colorPalettes[room]?.[style] || colorPalettes.livingRoom.modern;
 
     res.json({
@@ -175,12 +238,11 @@ const getColorSuggestions = async (req, res) => {
   }
 };
 
-// Save generated design to user's profile
+// Save design
 const saveDesign = async (req, res) => {
   try {
     const { imageBase64, prompt, roomType } = req.body;
     const userId = req.user._id;
-
     const User = require('../models/User');
 
     const user = await User.findById(userId);
@@ -219,7 +281,7 @@ const saveDesign = async (req, res) => {
   }
 };
 
-// Get user's saved designs
+// Get saved designs
 const getSavedDesigns = async (req, res) => {
   try {
     const userId = req.user._id;
