@@ -1,4 +1,3 @@
-const fetch = require('node-fetch');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // AI Room Visualization Controller
@@ -16,169 +15,117 @@ const visualizeRoom = async (req, res) => {
     }
 
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
 
-    // Try Gemini first, fallback to HuggingFace
-    if (GEMINI_API_KEY) {
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: 'AI service not configured. Please add GEMINI_API_KEY to environment variables.'
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+    // Enhanced prompt for better room visualization
+    const enhancedPrompt = `Generate a photorealistic interior design image: ${prompt}. Professional home interior photography, high quality, realistic lighting, modern design, 4k resolution, detailed textures.`;
+
+    // For image editing (if user uploaded an image)
+    if (imageBase64) {
       try {
-        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-        // Enhanced prompt for better room visualization
-        const enhancedPrompt = `Generate a photorealistic interior design image: ${prompt}. Professional home interior photography, high quality, realistic lighting, modern design, 4k resolution, detailed textures.`;
-
-        // Use Gemini's imagen model for image generation
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-        // For image editing (if user uploaded an image)
-        if (imageBase64) {
-          // Extract base64 data without the data URL prefix
-          const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+        // Extract base64 data without the data URL prefix
+        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
-          const result = await model.generateContent([
-            {
-              inlineData: {
-                mimeType: "image/jpeg",
-                data: base64Data
-              }
-            },
-            `Edit this room image: ${prompt}. Keep the room structure but change the wall colors and decor as described. Make it look realistic and professional.`
-          ]);
-
-          const response = await result.response;
-          const text = response.text();
-
-          // Gemini text response - we need to use Imagen for actual image generation
-          // For now, fall through to image generation
-        }
-
-        // Use Imagen 3 for image generation via Vertex AI
-        // Note: This requires Google Cloud setup
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${GEMINI_API_KEY}`,
+        const result = await model.generateContent([
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              instances: [{ prompt: enhancedPrompt }],
-              parameters: {
-                sampleCount: 1,
-                aspectRatio: "16:9",
-                safetyFilterLevel: "block_few",
-                personGeneration: "allow_adult"
-              }
-            })
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Data
+            }
+          },
+          `Analyze this room and describe how it would look with the following changes: ${prompt}. Describe the colors, textures, and overall aesthetic in detail.`
+        ]);
+
+        const response = await result.response;
+        const description = response.text();
+
+        // Use the description to generate new image
+        const imageModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        const imageResult = await imageModel.generateContent({
+          contents: [{
+            parts: [{ text: enhancedPrompt + " " + description.substring(0, 500) }]
+          }],
+          generationConfig: {
+            responseModalities: ["image", "text"],
           }
-        );
+        });
 
-        if (response.ok) {
-          const data = await response.json();
+        const imageResponse = await imageResult.response;
 
-          if (data.predictions && data.predictions[0]?.bytesBase64Encoded) {
-            const generatedImageBase64 = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+        // Check if image was generated
+        for (const part of imageResponse.candidates[0].content.parts) {
+          if (part.inlineData) {
+            const generatedImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 
             return res.json({
               success: true,
-              message: 'Room visualization generated successfully with Gemini!',
+              message: 'Room visualization generated successfully!',
               image: generatedImageBase64,
               prompt: prompt,
-              model: 'gemini-imagen-3'
+              model: 'gemini'
             });
           }
         }
-
-        // If Gemini Imagen fails, fall through to HuggingFace
-        console.log('Gemini Imagen failed, trying HuggingFace...');
-
-      } catch (geminiError) {
-        console.error('Gemini Error:', geminiError.message);
-        // Fall through to HuggingFace
+      } catch (editError) {
+        console.error('Image editing error:', editError.message);
+        // Fall through to text-to-image generation
       }
     }
 
-    // Fallback to HuggingFace
-    if (!HF_API_KEY) {
+    // Text-to-image generation using Gemini
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+      const result = await model.generateContent({
+        contents: [{
+          parts: [{ text: enhancedPrompt }]
+        }],
+        generationConfig: {
+          responseModalities: ["image", "text"],
+        }
+      });
+
+      const response = await result.response;
+
+      // Check if image was generated
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          const generatedImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+
+          return res.json({
+            success: true,
+            message: 'Room visualization generated successfully!',
+            image: generatedImageBase64,
+            prompt: prompt,
+            model: 'gemini'
+          });
+        }
+      }
+
+      // If no image in response, return text description
       return res.status(500).json({
         success: false,
-        message: 'AI service not configured. Please add GEMINI_API_KEY or HUGGINGFACE_API_KEY to environment variables.'
+        message: 'Image generation not available. Please try again.',
+        description: response.text()
       });
-    }
 
-    // Enhanced prompt for better room visualization results
-    const enhancedPrompt = `Interior design photography, ${prompt}, professional home interior, high quality, realistic lighting, 4k, detailed`;
-
-    let response;
-
-    // Using a free model that works without Pro subscription
-    // Black Forest Labs FLUX.1-schnell - fast and free
-    response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
-      {
-        headers: {
-          Authorization: `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        method: "POST",
-        body: JSON.stringify({
-          inputs: enhancedPrompt
-        }),
-      }
-    );
-
-    // Check if model is loading (common with free tier)
-    if (response.status === 503) {
-      const data = await response.json().catch(() => ({}));
-      return res.status(503).json({
+    } catch (genError) {
+      console.error('Gemini generation error:', genError.message);
+      return res.status(500).json({
         success: false,
-        message: 'AI model is loading. Please try again in a few seconds.',
-        estimatedTime: data.estimated_time || 20
+        message: 'Failed to generate image. Please try again later.'
       });
     }
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Hugging Face API Error:', errorData);
-
-      // Try fallback model if first one fails
-      console.log('Trying fallback model...');
-      response = await fetch(
-        "https://router.huggingface.co/hf-inference/models/runwayml/stable-diffusion-v1-5",
-        {
-          headers: {
-            Authorization: `Bearer ${HF_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          method: "POST",
-          body: JSON.stringify({
-            inputs: enhancedPrompt
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const fallbackError = await response.json().catch(() => ({}));
-        console.error('Fallback model error:', fallbackError);
-        return res.status(response.status).json({
-          success: false,
-          message: fallbackError.error || 'Failed to generate image. Please try again.'
-        });
-      }
-    }
-
-    // Get image buffer from response
-    const imageBuffer = await response.buffer();
-
-    // Convert to base64
-    const generatedImageBase64 = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
-
-    res.json({
-      success: true,
-      message: 'Room visualization generated successfully!',
-      image: generatedImageBase64,
-      prompt: prompt,
-      model: 'huggingface'
-    });
 
   } catch (error) {
     console.error('AI Visualization Error:', error);
@@ -246,8 +193,6 @@ const saveDesign = async (req, res) => {
     const { imageBase64, prompt, roomType } = req.body;
     const userId = req.user._id;
 
-    // For now, we'll store in the user's savedDesigns array
-    // You can create a separate Design model if needed
     const User = require('../models/User');
 
     const user = await User.findById(userId);
@@ -258,7 +203,6 @@ const saveDesign = async (req, res) => {
       });
     }
 
-    // Initialize savedDesigns array if it doesn't exist
     if (!user.savedDesigns) {
       user.savedDesigns = [];
     }
