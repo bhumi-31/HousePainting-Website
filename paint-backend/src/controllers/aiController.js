@@ -1,7 +1,8 @@
 const fetch = require('node-fetch');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // AI Room Visualization Controller
-// Uses Hugging Face's free inference API
+// Uses Google Gemini for image generation
 
 const visualizeRoom = async (req, res) => {
   try {
@@ -14,12 +15,93 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
-    
+
+    // Try Gemini first, fallback to HuggingFace
+    if (GEMINI_API_KEY) {
+      try {
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+        // Enhanced prompt for better room visualization
+        const enhancedPrompt = `Generate a photorealistic interior design image: ${prompt}. Professional home interior photography, high quality, realistic lighting, modern design, 4k resolution, detailed textures.`;
+
+        // Use Gemini's imagen model for image generation
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+        // For image editing (if user uploaded an image)
+        if (imageBase64) {
+          // Extract base64 data without the data URL prefix
+          const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: base64Data
+              }
+            },
+            `Edit this room image: ${prompt}. Keep the room structure but change the wall colors and decor as described. Make it look realistic and professional.`
+          ]);
+
+          const response = await result.response;
+          const text = response.text();
+
+          // Gemini text response - we need to use Imagen for actual image generation
+          // For now, fall through to image generation
+        }
+
+        // Use Imagen 3 for image generation via Vertex AI
+        // Note: This requires Google Cloud setup
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              instances: [{ prompt: enhancedPrompt }],
+              parameters: {
+                sampleCount: 1,
+                aspectRatio: "16:9",
+                safetyFilterLevel: "block_few",
+                personGeneration: "allow_adult"
+              }
+            })
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.predictions && data.predictions[0]?.bytesBase64Encoded) {
+            const generatedImageBase64 = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+
+            return res.json({
+              success: true,
+              message: 'Room visualization generated successfully with Gemini!',
+              image: generatedImageBase64,
+              prompt: prompt,
+              model: 'gemini-imagen-3'
+            });
+          }
+        }
+
+        // If Gemini Imagen fails, fall through to HuggingFace
+        console.log('Gemini Imagen failed, trying HuggingFace...');
+
+      } catch (geminiError) {
+        console.error('Gemini Error:', geminiError.message);
+        // Fall through to HuggingFace
+      }
+    }
+
+    // Fallback to HuggingFace
     if (!HF_API_KEY) {
       return res.status(500).json({
         success: false,
-        message: 'AI service not configured. Please add HUGGINGFACE_API_KEY to environment variables.'
+        message: 'AI service not configured. Please add GEMINI_API_KEY or HUGGINGFACE_API_KEY to environment variables.'
       });
     }
 
@@ -33,7 +115,7 @@ const visualizeRoom = async (req, res) => {
     response = await fetch(
       "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
       {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${HF_API_KEY}`,
           "Content-Type": "application/json"
         },
@@ -57,13 +139,13 @@ const visualizeRoom = async (req, res) => {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Hugging Face API Error:', errorData);
-      
+
       // Try fallback model if first one fails
       console.log('Trying fallback model...');
       response = await fetch(
         "https://router.huggingface.co/hf-inference/models/runwayml/stable-diffusion-v1-5",
         {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${HF_API_KEY}`,
             "Content-Type": "application/json"
           },
@@ -73,7 +155,7 @@ const visualizeRoom = async (req, res) => {
           }),
         }
       );
-      
+
       if (!response.ok) {
         const fallbackError = await response.json().catch(() => ({}));
         console.error('Fallback model error:', fallbackError);
@@ -86,7 +168,7 @@ const visualizeRoom = async (req, res) => {
 
     // Get image buffer from response
     const imageBuffer = await response.buffer();
-    
+
     // Convert to base64
     const generatedImageBase64 = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
 
@@ -94,7 +176,8 @@ const visualizeRoom = async (req, res) => {
       success: true,
       message: 'Room visualization generated successfully!',
       image: generatedImageBase64,
-      prompt: prompt
+      prompt: prompt,
+      model: 'huggingface'
     });
 
   } catch (error) {
@@ -137,7 +220,7 @@ const getColorSuggestions = async (req, res) => {
 
     const room = roomType || 'livingRoom';
     const style = mood || 'modern';
-    
+
     const colors = colorPalettes[room]?.[style] || colorPalettes.livingRoom.modern;
 
     res.json({
@@ -166,7 +249,7 @@ const saveDesign = async (req, res) => {
     // For now, we'll store in the user's savedDesigns array
     // You can create a separate Design model if needed
     const User = require('../models/User');
-    
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -209,9 +292,9 @@ const getSavedDesigns = async (req, res) => {
   try {
     const userId = req.user._id;
     const User = require('../models/User');
-    
+
     const user = await User.findById(userId).select('savedDesigns');
-    
+
     res.json({
       success: true,
       designs: user?.savedDesigns || []
