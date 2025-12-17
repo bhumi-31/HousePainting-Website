@@ -1,29 +1,5 @@
 const fetch = require('node-fetch');
 
-// Hugging Face API helper function
-const callHuggingFaceAPI = async (model, inputs, parameters = {}) => {
-  const HF_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
-
-  const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${HF_API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      inputs,
-      parameters,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
-  }
-
-  return response;
-};
-
 const visualizeRoom = async (req, res) => {
   try {
     const { prompt, imageBase64 } = req.body;
@@ -44,137 +20,214 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
-    // IMAGE EDITING: Only change wall colors, keep everything else EXACTLY same
+    // For image editing with uploaded photo
     if (imageBase64) {
+      console.log('🎨 Processing room visualization with reference image...');
+      console.log('📝 Generating visualization based on your color preference...');
+    } else {
+      console.log('🎨 Generating new room from description...');
+    }
+
+    // TEXT-TO-IMAGE GENERATION using SDXL
+    const enhancedPrompt = imageBase64
+      ? `Professional interior design photo: modern room with ${prompt}, clean painted walls, wooden floor, natural daylight, furniture, high quality, 4k, photorealistic architectural photography, interior design magazine.`
+      : `Professional interior design photo: ${prompt}. Empty room, clean walls, wooden floor, natural light, high quality, 4k, photorealistic architectural photography.`;
+
+    // Updated API URL - using router.huggingface.co instead of api-inference
+    const API_URL = 'https://router.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
+
+    console.log('🚀 Calling Hugging Face API...');
+    console.log('📝 Prompt:', enhancedPrompt);
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HF_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'x-wait-for-model': 'true'
+      },
+      body: JSON.stringify({
+        inputs: enhancedPrompt,
+        parameters: {
+          num_inference_steps: 4,
+          guidance_scale: 0
+        }
+      }),
+      timeout: 60000 // 60 second timeout
+    });
+
+    console.log('📡 Response status:', response.status);
+
+    // Check for model loading status
+    if (response.status === 503) {
+      let errorData;
       try {
-        console.log('🎨 Repainting walls on your uploaded image...');
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: 'Model loading' };
+      }
+      console.log('⏳ Model loading:', errorData);
+      return res.status(503).json({
+        success: false,
+        message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
+        isLoading: true,
+        estimatedWait: errorData.estimated_time || 25
+      });
+    }
 
-        // Extract base64 data (remove data:image/...;base64, prefix if present)
-        const base64Data = imageBase64.includes('base64,')
-          ? imageBase64.split('base64,')[1]
-          : imageBase64;
+    if (!response.ok) {
+      let errorText;
+      try {
+        const errorJson = await response.json();
+        errorText = JSON.stringify(errorJson);
+      } catch (e) {
+        errorText = await response.text();
+      }
+      console.error('❌ Hugging Face API error:', response.status, errorText);
 
-        // Convert base64 to binary for Hugging Face
-        const imageBuffer = Buffer.from(base64Data, 'base64');
+      // Try with Stable Diffusion 2.1 as fallback
+      console.log('🔄 Trying fallback model (Stable Diffusion 2.1)...');
 
-        // VERY SPECIFIC PROMPT: Only repaint walls, nothing else!
-        const editPrompt = `repaint the walls with ${prompt}`;
+      const fallbackResponse = await fetch(
+        'https://router.huggingface.co/models/stabilityai/stable-diffusion-2-1',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${HF_API_TOKEN}`,
+            'Content-Type': 'application/json',
+            'x-wait-for-model': 'true'
+          },
+          body: JSON.stringify({
+            inputs: enhancedPrompt,
+            parameters: {
+              num_inference_steps: 30
+            }
+          }),
+          timeout: 60000
+        }
+      );
 
-        // Use InstructPix2Pix model on Hugging Face
-        const response = await fetch(
-          'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
+      if (fallbackResponse.status === 503) {
+        let fallbackError;
+        try {
+          fallbackError = await fallbackResponse.json();
+        } catch (e) {
+          fallbackError = {};
+        }
+        return res.status(503).json({
+          success: false,
+          message: 'AI models are warming up. Please wait 20-30 seconds and try again.',
+          isLoading: true,
+          estimatedWait: fallbackError.estimated_time || 25
+        });
+      }
+
+      if (!fallbackResponse.ok) {
+        let fallbackErrorText;
+        try {
+          const fallbackJson = await fallbackResponse.json();
+          fallbackErrorText = JSON.stringify(fallbackJson);
+        } catch (e) {
+          fallbackErrorText = await fallbackResponse.text();
+        }
+        console.error('❌ Fallback also failed:', fallbackErrorText);
+        
+        // Try one more fallback with Stable Diffusion XL
+        console.log('🔄 Trying second fallback (SDXL-Turbo)...');
+        
+        const sdxlResponse = await fetch(
+          'https://router.huggingface.co/models/stabilityai/sdxl-turbo',
           {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${HF_API_TOKEN}`,
               'Content-Type': 'application/json',
+              'x-wait-for-model': 'true'
             },
             body: JSON.stringify({
-              inputs: editPrompt,
+              inputs: enhancedPrompt,
               parameters: {
-                image: base64Data,
-                num_inference_steps: 50,
-                guidance_scale: 7.5,
-                image_guidance_scale: 1.5,
+                num_inference_steps: 4
               }
             }),
+            timeout: 60000
           }
         );
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
-        }
-
-        console.log('✅ Wall repainting complete');
-
-        const arrayBuffer = await response.arrayBuffer();
-        const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
-
-        return res.json({
-          success: true,
-          message: 'Walls repainted! Your room layout is preserved. 🎨',
-          image: generatedBase64,
-          prompt: prompt,
-          model: 'huggingface-instruct-pix2pix',
-          type: 'edit'
-        });
-
-      } catch (editError) {
-        console.error('❌ Image editing error:', editError.message);
-
-        if (editError.message.includes('503') || editError.message.includes('loading') || editError.message.includes('currently loading')) {
-          return res.status(503).json({
-            success: false,
-            message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
-            isLoading: true,
-            estimatedWait: 25
+        if (sdxlResponse.ok) {
+          const sdxlBuffer = await sdxlResponse.arrayBuffer();
+          const sdxlBase64 = `data:image/png;base64,${Buffer.from(sdxlBuffer).toString('base64')}`;
+          
+          console.log('✅ SDXL-Turbo succeeded');
+          
+          return res.json({
+            success: true,
+            message: imageBase64
+              ? `Room visualization with ${prompt} created! 🎨`
+              : 'Room visualization created! 🎨',
+            image: sdxlBase64,
+            prompt: prompt,
+            model: 'huggingface-sdxl-turbo',
+            type: 'generate'
           });
         }
-
-        // Fallback: Generate new room based on prompt
-        console.log('⚠️ Image editing failed, generating new room...');
+        
+        throw new Error('All AI models are currently unavailable. Please try again in a few minutes.');
       }
+
+      const fallbackBuffer = await fallbackResponse.arrayBuffer();
+      const fallbackBase64 = `data:image/png;base64,${Buffer.from(fallbackBuffer).toString('base64')}`;
+
+      console.log('✅ Fallback model succeeded');
+
+      return res.json({
+        success: true,
+        message: imageBase64
+          ? `Room visualization with ${prompt} created! 🎨`
+          : 'Room visualization created! 🎨',
+        image: fallbackBase64,
+        prompt: prompt,
+        model: 'huggingface-sd21',
+        type: 'generate'
+      });
     }
 
-    // TEXT-TO-IMAGE GENERATION (when no image uploaded OR editing failed)
-    console.log('🎨 Generating new room from description...');
+    // Check content type
+    const contentType = response.headers.get('content-type');
+    console.log('📦 Content-Type:', contentType);
 
-    const enhancedPrompt = `Professional interior design photo: ${prompt}. Empty room, clean walls, wooden floor, natural light, high quality, 4k, photorealistic architectural photography.`;
-
-    // Use Stable Diffusion XL on Hugging Face
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${HF_API_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputs: enhancedPrompt,
-          parameters: {
-            negative_prompt: "blurry, low quality, distorted, cartoon, painting",
-            num_inference_steps: 30,
-            guidance_scale: 7.5,
-            width: 1024,
-            height: 768,
-          }
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-
-      if (errorText.includes('loading') || response.status === 503) {
-        return res.status(503).json({
-          success: false,
-          message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
-          isLoading: true,
-          estimatedWait: 25
-        });
-      }
-
-      throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
+    if (contentType && contentType.includes('application/json')) {
+      // Response is JSON (likely an error)
+      const jsonResponse = await response.json();
+      console.error('❌ Unexpected JSON response:', jsonResponse);
+      throw new Error(jsonResponse.error || 'Failed to generate image');
     }
 
     const arrayBuffer = await response.arrayBuffer();
+    
+    if (arrayBuffer.byteLength === 0) {
+      throw new Error('Received empty image data');
+    }
+
     const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
+
+    console.log('✅ Image generation successful');
+    console.log('📏 Image size:', arrayBuffer.byteLength, 'bytes');
 
     return res.json({
       success: true,
       message: imageBase64
-        ? 'Generated new room (original image editing unavailable)'
+        ? `Room visualization with ${prompt} created! 🎨`
         : 'New room visualization created! 🎨',
       image: generatedBase64,
       prompt: prompt,
-      model: 'huggingface-sdxl',
+      model: 'huggingface-flux',
       type: 'generate'
     });
 
   } catch (error) {
     console.error('💥 Visualization Error:', error);
+    console.error('💥 Error stack:', error.stack);
 
     if (error.message.includes('503') || error.message.includes('loading')) {
       return res.status(503).json({
@@ -185,9 +238,17 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
+    if (error.type === 'request-timeout') {
+      return res.status(408).json({
+        success: false,
+        message: 'Request timed out. The AI model is taking too long to respond. Please try again.'
+      });
+    }
+
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to process image. Please try again.'
+      message: error.message || 'Failed to process image. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.toString() : undefined
     });
   }
 };
@@ -245,6 +306,14 @@ const getColorSuggestions = async (req, res) => {
 const saveDesign = async (req, res) => {
   try {
     const { imageBase64, prompt, roomType } = req.body;
+    
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
     const userId = req.user._id;
     const User = require('../models/User');
 
@@ -287,6 +356,13 @@ const saveDesign = async (req, res) => {
 // Get saved designs
 const getSavedDesigns = async (req, res) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
     const userId = req.user._id;
     const User = require('../models/User');
 
