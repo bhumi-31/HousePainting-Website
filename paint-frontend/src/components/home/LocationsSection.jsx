@@ -2,59 +2,88 @@ import { MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const locations = [
-    { name: "Brampton", slug: "brampton" },
-    { name: "Caledon", slug: "caledon" },
-    { name: "Milton", slug: "milton" },
-    { name: "Niagara", slug: "niagara" },
-    { name: "Kitchener", slug: "kitchener" },
+    { name: "Toronto", postalCode: "M5A" },
+    { name: "Mississauga", postalCode: "L5A" },
+    { name: "Brampton", postalCode: "L6P" },
+    { name: "Oshawa", postalCode: "L1G" },
+    { name: "Richmond Hill", postalCode: "L4B" },
+    { name: "Vaughan", postalCode: "L4H" },
+    { name: "Markham", postalCode: "L3P" },
+    { name: "Oakville", postalCode: "L6H" },
+    { name: "Hamilton", postalCode: "L8P" },
+    { name: "London", postalCode: "N6A" },
+    { name: "Barrie", postalCode: "L4M" },
+    { name: "Caledon", postalCode: "L7C" },
+    { name: "Milton", postalCode: "L9T" },
+    { name: "Niagara", postalCode: "L2E" },
+    { name: "Kitchener", postalCode: "N2G" },
 ];
 
 const LocationsSection = () => {
     return (
-        <section className="py-20 bg-primary">
+        <section className="py-24 bg-[#1a1a2e]">
             <div className="container-custom">
                 {/* Header */}
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-black text-primary-foreground mb-4">
-                        <span className="text-accent">Locations</span> We Serve
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl md:text-5xl font-heading font-black mb-4">
+                        <span className="text-white">Locations in </span>
+                        <span className="text-accent italic">Canada</span>
                     </h2>
-                    <p className="text-primary-foreground/70 max-w-2xl mx-auto">
-                        Professional house painting services across Ontario, Canada
+                    <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+                        Professional house painting services across Ontario
                     </p>
                 </div>
 
-                {/* Locations Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {locations.map((location, index) => (
-                        <Link
-                            key={location.slug}
-                            to={`/services?location=${location.slug}`}
-                            className="group relative bg-primary-foreground/5 hover:bg-accent border border-primary-foreground/10 hover:border-accent rounded-xl p-6 text-center transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                            style={{ animationDelay: `${index * 0.1}s` }}
-                        >
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="w-12 h-12 bg-accent/20 group-hover:bg-primary-foreground/20 rounded-full flex items-center justify-center transition-colors duration-300">
-                                    <MapPin className="w-6 h-6 text-accent group-hover:text-primary-foreground transition-colors duration-300" />
+                {/* Ontario Section */}
+                <div className="bg-[#252538] rounded-2xl p-8 border border-gray-700">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-8 h-8 bg-red-500 flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">+</span>
+                        </div>
+                        <h3 className="text-2xl font-heading font-bold text-white">ONTARIO</h3>
+                    </div>
+
+                    {/* Locations Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {locations.map((location, index) => (
+                            <Link
+                                key={location.name}
+                                to={`/services?location=${location.name.toLowerCase().replace(' ', '-')}`}
+                                className="group bg-[#1a1a2e] hover:bg-accent border border-gray-600 hover:border-accent rounded-lg p-4 transition-all duration-300 transform hover:scale-105"
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <MapPin className="w-4 h-4 text-accent group-hover:text-white" />
+                                    <span className="text-white font-medium text-sm group-hover:text-white">
+                                        {location.name}
+                                    </span>
                                 </div>
-                                <h3 className="text-lg font-heading font-bold text-primary-foreground group-hover:text-primary-foreground transition-colors duration-300">
-                                    {location.name}
-                                </h3>
-                                <p className="text-sm text-primary-foreground/60 group-hover:text-primary-foreground/80 transition-colors duration-300">
-                                    House Painting
-                                </p>
-                            </div>
+                                <span className="text-gray-500 text-xs group-hover:text-white/70">
+                                    {location.postalCode}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+
+                    {/* All Locations Link */}
+                    <div className="mt-8 text-center">
+                        <Link
+                            to="/contact"
+                            className="inline-flex items-center gap-2 text-accent hover:text-white transition-colors"
+                        >
+                            <span>All locations in Ontario</span>
+                            <span>→</span>
                         </Link>
-                    ))}
+                    </div>
                 </div>
 
                 {/* Bottom text */}
                 <div className="text-center mt-10">
-                    <p className="text-primary-foreground/70">
-                        Don't see your location?{" "}
+                    <p className="text-gray-400">
+                        Don't see your area?{" "}
                         <Link to="/contact" className="text-accent hover:underline font-semibold">
                             Contact us
                         </Link>{" "}
-                        - we may still be able to help!
+                        - we serve all of Ontario!
                     </p>
                 </div>
             </div>
