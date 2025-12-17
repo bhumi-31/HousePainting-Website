@@ -1,4 +1,5 @@
-import { MapPin, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { MapPin, ArrowRight, Plus, Minus } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Locations data with postal codes (for search validation) - not displayed
@@ -21,11 +22,13 @@ const locations = [
 ];
 
 const LocationsSection = () => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
         <section className="section-padding bg-gradient-to-b from-gray-50 to-white">
             <div className="container-custom">
-                {/* Section Header - Matching ServicesSection style */}
-                <div className="text-center mb-16">
+                {/* Section Header */}
+                <div className="text-center mb-12">
                     <span className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm font-semibold mb-4">
                         <MapPin className="w-4 h-4" />
                         Service Areas
@@ -38,28 +41,55 @@ const LocationsSection = () => {
                     </p>
                 </div>
 
-                {/* Locations Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {locations.map((location, index) => (
-                        <Link
-                            key={location.name}
-                            to={`/services?location=${location.name.toLowerCase().replace(' ', '-')}`}
-                            className="group bg-white rounded-xl p-5 shadow-md hover:shadow-xl border border-gray-100 hover:border-accent transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
-                            style={{ animationDelay: `${index * 0.05}s` }}
+                {/* Collapsible Ontario Box */}
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                        {/* Header with + button */}
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-accent/10 group-hover:bg-accent rounded-lg flex items-center justify-center transition-colors duration-300">
-                                    <MapPin className="w-5 h-5 text-accent group-hover:text-white transition-colors duration-300" />
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
+                                    <MapPin className="w-6 h-6 text-white" />
                                 </div>
-                                <div>
-                                    <h3 className="font-heading font-semibold text-foreground group-hover:text-accent transition-colors">
-                                        {location.name}
-                                    </h3>
-                                    <p className="text-xs text-muted-foreground">House Painting</p>
+                                <div className="text-left">
+                                    <h3 className="text-xl font-heading font-bold text-foreground">ONTARIO</h3>
+                                    <p className="text-sm text-muted-foreground">{locations.length} locations</p>
                                 </div>
                             </div>
-                        </Link>
-                    ))}
+                            <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
+                                {isExpanded ? (
+                                    <Minus className="w-5 h-5 text-accent" />
+                                ) : (
+                                    <Plus className="w-5 h-5 text-accent" />
+                                )}
+                            </div>
+                        </button>
+
+                        {/* Expandable Locations List */}
+                        <div
+                            className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+                                }`}
+                        >
+                            <div className="p-6 pt-0 border-t border-gray-100">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-4">
+                                    {locations.map((location) => (
+                                        <Link
+                                            key={location.name}
+                                            to={`/services?location=${location.name.toLowerCase().replace(' ', '-')}`}
+                                            className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/5 hover:text-accent transition-colors group"
+                                        >
+                                            <MapPin className="w-4 h-4 text-accent" />
+                                            <span className="font-medium text-foreground group-hover:text-accent">
+                                                {location.name}
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Bottom CTA */}
