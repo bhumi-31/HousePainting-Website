@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+// AbortController is built-in to Node.js 15+
 
 const visualizeRoom = async (req, res) => {
   try {
@@ -11,15 +12,6 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
-    const HF_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
-
-    if (!HF_API_TOKEN) {
-      return res.status(500).json({
-        success: false,
-        message: 'AI service not configured. Please add HUGGINGFACE_API_TOKEN to environment variables.'
-      });
-    }
-
     // For image editing with uploaded photo
     if (imageBase64) {
       console.log('🎨 Processing room visualization with reference image...');
@@ -28,230 +20,66 @@ const visualizeRoom = async (req, res) => {
       console.log('🎨 Generating new room from description...');
     }
 
-    // TEXT-TO-IMAGE GENERATION using SDXL
+    // Create enhanced prompt for better room visualization
     const enhancedPrompt = imageBase64
-      ? `Professional interior design photo: modern room with ${prompt}, clean painted walls, wooden floor, natural daylight, furniture, high quality, 4k, photorealistic architectural photography, interior design magazine.`
-      : `Professional interior design photo: ${prompt}. Empty room, clean walls, wooden floor, natural light, high quality, 4k, photorealistic architectural photography.`;
+      ? `Professional interior design photo: modern room with ${prompt} walls, clean painted walls, wooden floor, natural daylight, furniture, high quality, 4k, photorealistic architectural photography, interior design magazine.`
+      : `Professional interior design photo: ${prompt}. Beautiful room, clean walls, wooden floor, natural light, high quality, 4k, photorealistic architectural photography.`;
 
-    // Updated API URL - using router.huggingface.co instead of api-inference
-    const API_URL = 'https://router.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
-
-    console.log('🚀 Calling Hugging Face API...');
+    console.log('🚀 Calling Pollinations.ai API...');
     console.log('📝 Prompt:', enhancedPrompt);
 
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'x-wait-for-model': 'true'
-      },
-      body: JSON.stringify({
-        inputs: enhancedPrompt,
-        parameters: {
-          num_inference_steps: 4,
-          guidance_scale: 0
-        }
-      }),
-      timeout: 60000 // 60 second timeout
+    // Use Pollinations.ai - FREE API, no key needed!
+    const encodedPrompt = encodeURIComponent(enhancedPrompt);
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=768&nologo=true&seed=${Date.now()}`;
+
+    console.log('🔗 API URL:', pollinationsUrl);
+
+    // Create AbortController for timeout (node-fetch v2 doesn't support timeout option)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+
+    const response = await fetch(pollinationsUrl, {
+      method: 'GET',
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     console.log('📡 Response status:', response.status);
 
-    // Check for model loading status
-    if (response.status === 503) {
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        errorData = { error: 'Model loading' };
-      }
-      console.log('⏳ Model loading:', errorData);
-      return res.status(503).json({
-        success: false,
-        message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
-        isLoading: true,
-        estimatedWait: errorData.estimated_time || 25
-      });
-    }
-
     if (!response.ok) {
-      let errorText;
-      try {
-        const errorJson = await response.json();
-        errorText = JSON.stringify(errorJson);
-      } catch (e) {
-        errorText = await response.text();
-      }
-      console.error('❌ Hugging Face API error:', response.status, errorText);
-
-      // Try with Stable Diffusion 2.1 as fallback
-      console.log('🔄 Trying fallback model (Stable Diffusion 2.1)...');
-
-      const fallbackResponse = await fetch(
-        'https://router.huggingface.co/models/stabilityai/stable-diffusion-2-1',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${HF_API_TOKEN}`,
-            'Content-Type': 'application/json',
-            'x-wait-for-model': 'true'
-          },
-          body: JSON.stringify({
-            inputs: enhancedPrompt,
-            parameters: {
-              num_inference_steps: 30
-            }
-          }),
-          timeout: 60000
-        }
-      );
-
-      if (fallbackResponse.status === 503) {
-        let fallbackError;
-        try {
-          fallbackError = await fallbackResponse.json();
-        } catch (e) {
-          fallbackError = {};
-        }
-        return res.status(503).json({
-          success: false,
-          message: 'AI models are warming up. Please wait 20-30 seconds and try again.',
-          isLoading: true,
-          estimatedWait: fallbackError.estimated_time || 25
-        });
-      }
-
-      if (!fallbackResponse.ok) {
-        let fallbackErrorText;
-        try {
-          const fallbackJson = await fallbackResponse.json();
-          fallbackErrorText = JSON.stringify(fallbackJson);
-        } catch (e) {
-          fallbackErrorText = await fallbackResponse.text();
-        }
-        console.error('❌ Fallback also failed:', fallbackErrorText);
-        
-        // Try one more fallback with Stable Diffusion XL
-        console.log('🔄 Trying second fallback (SDXL-Turbo)...');
-        
-        const sdxlResponse = await fetch(
-          'https://router.huggingface.co/models/stabilityai/sdxl-turbo',
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${HF_API_TOKEN}`,
-              'Content-Type': 'application/json',
-              'x-wait-for-model': 'true'
-            },
-            body: JSON.stringify({
-              inputs: enhancedPrompt,
-              parameters: {
-                num_inference_steps: 4
-              }
-            }),
-            timeout: 60000
-          }
-        );
-
-        if (sdxlResponse.ok) {
-          const sdxlBuffer = await sdxlResponse.arrayBuffer();
-          const sdxlBase64 = `data:image/png;base64,${Buffer.from(sdxlBuffer).toString('base64')}`;
-          
-          console.log('✅ SDXL-Turbo succeeded');
-          
-          return res.json({
-            success: true,
-            message: imageBase64
-              ? `Room visualization with ${prompt} created! 🎨`
-              : 'Room visualization created! 🎨',
-            image: sdxlBase64,
-            prompt: prompt,
-            model: 'huggingface-sdxl-turbo',
-            type: 'generate'
-          });
-        }
-        
-        throw new Error('All AI models are currently unavailable. Please try again in a few minutes.');
-      }
-
-      const fallbackBuffer = await fallbackResponse.arrayBuffer();
-      const fallbackBase64 = `data:image/png;base64,${Buffer.from(fallbackBuffer).toString('base64')}`;
-
-      console.log('✅ Fallback model succeeded');
-
-      return res.json({
-        success: true,
-        message: imageBase64
-          ? `Room visualization with ${prompt} created! 🎨`
-          : 'Room visualization created! 🎨',
-        image: fallbackBase64,
-        prompt: prompt,
-        model: 'huggingface-sd21',
-        type: 'generate'
-      });
+      console.error('❌ Pollinations API error:', response.status);
+      throw new Error(`Image generation failed with status ${response.status}`);
     }
 
-    // Check content type
-    const contentType = response.headers.get('content-type');
-    console.log('📦 Content-Type:', contentType);
-
-    if (contentType && contentType.includes('application/json')) {
-      // Response is JSON (likely an error)
-      const jsonResponse = await response.json();
-      console.error('❌ Unexpected JSON response:', jsonResponse);
-      throw new Error(jsonResponse.error || 'Failed to generate image');
-    }
-
+    // Get the image buffer and convert to base64
     const arrayBuffer = await response.arrayBuffer();
-    
-    if (arrayBuffer.byteLength === 0) {
-      throw new Error('Received empty image data');
-    }
-
     const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
 
-    console.log('✅ Image generation successful');
-    console.log('📏 Image size:', arrayBuffer.byteLength, 'bytes');
+    console.log('✅ Image generation successful! Size:', arrayBuffer.byteLength, 'bytes');
 
     return res.json({
       success: true,
       message: imageBase64
-        ? `Room visualization with ${prompt} created! 🎨`
+        ? `Room visualization with ${prompt} walls created! 🎨`
         : 'New room visualization created! 🎨',
       image: generatedBase64,
       prompt: prompt,
-      model: 'huggingface-flux',
+      model: 'pollinations-ai',
       type: 'generate'
     });
 
   } catch (error) {
     console.error('💥 Visualization Error:', error);
-    console.error('💥 Error stack:', error.stack);
-
-    if (error.message.includes('503') || error.message.includes('loading')) {
-      return res.status(503).json({
-        success: false,
-        message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
-        isLoading: true,
-        estimatedWait: 25
-      });
-    }
-
-    if (error.type === 'request-timeout') {
-      return res.status(408).json({
-        success: false,
-        message: 'Request timed out. The AI model is taking too long to respond. Please try again.'
-      });
-    }
 
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to process image. Please try again.',
-      error: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+      message: error.message || 'Failed to generate image. Please try again.'
     });
   }
 };
+
+
 
 // Get color suggestions
 const getColorSuggestions = async (req, res) => {
@@ -306,7 +134,7 @@ const getColorSuggestions = async (req, res) => {
 const saveDesign = async (req, res) => {
   try {
     const { imageBase64, prompt, roomType } = req.body;
-    
+
     if (!req.user || !req.user._id) {
       return res.status(401).json({
         success: false,
