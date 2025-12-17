@@ -1,5 +1,28 @@
-const Replicate = require('replicate');
 const fetch = require('node-fetch');
+
+// Hugging Face API helper function
+const callHuggingFaceAPI = async (model, inputs, parameters = {}) => {
+  const HF_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
+
+  const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${HF_API_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      inputs,
+      parameters,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
+  }
+
+  return response;
+};
 
 const visualizeRoom = async (req, res) => {
   try {
@@ -12,58 +35,60 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
-    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+    const HF_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
 
-    if (!REPLICATE_API_TOKEN) {
+    if (!HF_API_TOKEN) {
       return res.status(500).json({
         success: false,
-        message: 'AI service not configured. Please add REPLICATE_API_TOKEN to environment variables.'
+        message: 'AI service not configured. Please add HUGGINGFACE_API_TOKEN to environment variables.'
       });
     }
-
-    const replicate = new Replicate({ auth: REPLICATE_API_TOKEN });
 
     // IMAGE EDITING: Only change wall colors, keep everything else EXACTLY same
     if (imageBase64) {
       try {
         console.log('🎨 Repainting walls on your uploaded image...');
 
+        // Extract base64 data (remove data:image/...;base64, prefix if present)
+        const base64Data = imageBase64.includes('base64,')
+          ? imageBase64.split('base64,')[1]
+          : imageBase64;
+
+        // Convert base64 to binary for Hugging Face
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+
         // VERY SPECIFIC PROMPT: Only repaint walls, nothing else!
         const editPrompt = `repaint the walls with ${prompt}`;
-        const negativePrompt = "add furniture, add objects, add decor, change layout, change floor, add sofa, add table, add chairs, add anything new, different room";
 
-        const output = await replicate.run(
-          "timothybrooks/instruct-pix2pix:30c1d0b916a6f8efce20493f5d61ee27491ab2a60437c13c588468b9810ec23f",
+        // Use InstructPix2Pix model on Hugging Face
+        const response = await fetch(
+          'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
           {
-            input: {
-              image: imageBase64,
-              prompt: editPrompt,
-              negative_prompt: negativePrompt,
-              num_inference_steps: 100,
-              guidance_scale: 7.5,
-              image_guidance_scale: 2.5,  // VERY HIGH = stay extremely close to original
-              num_outputs: 1
-            }
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${HF_API_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              inputs: editPrompt,
+              parameters: {
+                image: base64Data,
+                num_inference_steps: 50,
+                guidance_scale: 7.5,
+                image_guidance_scale: 1.5,
+              }
+            }),
           }
         );
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
+        }
+
         console.log('✅ Wall repainting complete');
 
-        let imageUrl;
-        if (Array.isArray(output) && output.length > 0) {
-          imageUrl = output[0];
-        } else if (typeof output === 'string') {
-          imageUrl = output;
-        } else {
-          throw new Error('Invalid output from model');
-        }
-
-        const imageResponse = await fetch(imageUrl);
-        if (!imageResponse.ok) {
-          throw new Error('Failed to fetch edited image');
-        }
-        
-        const arrayBuffer = await imageResponse.arrayBuffer();
+        const arrayBuffer = await response.arrayBuffer();
         const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
 
         return res.json({
@@ -71,14 +96,14 @@ const visualizeRoom = async (req, res) => {
           message: 'Walls repainted! Your room layout is preserved. 🎨',
           image: generatedBase64,
           prompt: prompt,
-          model: 'instruct-pix2pix',
+          model: 'huggingface-instruct-pix2pix',
           type: 'edit'
         });
 
       } catch (editError) {
         console.error('❌ Image editing error:', editError.message);
 
-        if (editError.message.includes('503') || editError.message.includes('loading')) {
+        if (editError.message.includes('503') || editError.message.includes('loading') || editError.message.includes('currently loading')) {
           return res.status(503).json({
             success: false,
             message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
@@ -87,46 +112,8 @@ const visualizeRoom = async (req, res) => {
           });
         }
 
-        // Fallback: Use SDXL with VERY LOW prompt_strength
-        try {
-          console.log('🔄 Trying alternative method with stronger image preservation...');
-
-          const altPrompt = `${prompt} walls`;
-          
-          const altOutput = await replicate.run(
-            "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-            {
-              input: {
-                image: imageBase64,
-                prompt: altPrompt,
-                negative_prompt: "furniture, sofa, table, chairs, objects, decor, add items, different layout",
-                prompt_strength: 0.25,  // VERY LOW = barely change the image
-                num_inference_steps: 50,
-                guidance_scale: 6,
-              }
-            }
-          );
-
-          const altUrl = Array.isArray(altOutput) ? altOutput[0] : altOutput;
-          const altResponse = await fetch(altUrl);
-          const altBuffer = await altResponse.arrayBuffer();
-          const altBase64 = `data:image/png;base64,${Buffer.from(altBuffer).toString('base64')}`;
-
-          return res.json({
-            success: true,
-            message: 'Wall color preview generated! 🎨',
-            image: altBase64,
-            prompt: prompt,
-            model: 'sdxl-img2img',
-            type: 'edit'
-          });
-
-        } catch (altError) {
-          console.error('❌ Alternative method failed:', altError.message);
-          
-          // If both fail, generate new room as last resort
-          console.log('⚠️ Both methods failed, generating new room...');
-        }
+        // Fallback: Generate new room based on prompt
+        console.log('⚠️ Image editing failed, generating new room...');
       }
     }
 
@@ -135,44 +122,60 @@ const visualizeRoom = async (req, res) => {
 
     const enhancedPrompt = `Professional interior design photo: ${prompt}. Empty room, clean walls, wooden floor, natural light, high quality, 4k, photorealistic architectural photography.`;
 
-    const output = await replicate.run(
-      "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+    // Use Stable Diffusion XL on Hugging Face
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
       {
-        input: {
-          prompt: enhancedPrompt,
-          negative_prompt: "blurry, low quality, distorted, cartoon, painting",
-          width: 1024,
-          height: 768,
-          num_inference_steps: 30,
-          guidance_scale: 7.5,
-        }
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${HF_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: enhancedPrompt,
+          parameters: {
+            negative_prompt: "blurry, low quality, distorted, cartoon, painting",
+            num_inference_steps: 30,
+            guidance_scale: 7.5,
+            width: 1024,
+            height: 768,
+          }
+        }),
       }
     );
 
-    const imageUrl = Array.isArray(output) ? output[0] : output;
-    
-    if (!imageUrl) {
-      throw new Error('No image generated');
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      if (errorText.includes('loading') || response.status === 503) {
+        return res.status(503).json({
+          success: false,
+          message: 'AI model is warming up. Please wait 20-30 seconds and try again.',
+          isLoading: true,
+          estimatedWait: 25
+        });
+      }
+
+      throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
     }
 
-    const imageResponse = await fetch(imageUrl);
-    const arrayBuffer = await imageResponse.arrayBuffer();
+    const arrayBuffer = await response.arrayBuffer();
     const generatedBase64 = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
 
     return res.json({
       success: true,
-      message: imageBase64 
-        ? 'Generated new room (original image editing unavailable)' 
+      message: imageBase64
+        ? 'Generated new room (original image editing unavailable)'
         : 'New room visualization created! 🎨',
       image: generatedBase64,
       prompt: prompt,
-      model: 'sdxl',
+      model: 'huggingface-sdxl',
       type: 'generate'
     });
 
   } catch (error) {
     console.error('💥 Visualization Error:', error);
-    
+
     if (error.message.includes('503') || error.message.includes('loading')) {
       return res.status(503).json({
         success: false,
