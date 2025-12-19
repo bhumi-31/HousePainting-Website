@@ -8,7 +8,7 @@
 
 A full-stack web application for a professional house painting business serving Ontario, Canada. Features customer-facing website, quote calculator, AI room visualizer, and admin dashboard.
 
-🌐 **Live Site**: [http://15.206.178.240](http://15.206.178.240)
+🌐 **Live Site**: [https://chandanhousepainting.com/](https://chandanhousepainting.com/)
 
 ---
 
