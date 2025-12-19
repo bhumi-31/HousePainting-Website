@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -41,7 +42,7 @@ app.get('/', (req, res) => {
 
 });
 
-//health check 
+//health check
 app.get('/health', (req, res) => {
   res.json({
     success: true,
