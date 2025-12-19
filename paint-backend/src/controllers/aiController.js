@@ -40,7 +40,13 @@ const visualizeRoom = async (req, res) => {
 
     const response = await fetch(pollinationsUrl, {
       method: 'GET',
-      signal: controller.signal
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/png,image/jpeg,image/*,*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://pollinations.ai/'
+      }
     });
 
     clearTimeout(timeoutId);
