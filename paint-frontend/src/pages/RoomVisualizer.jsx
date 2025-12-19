@@ -1,25 +1,26 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Wand2, Upload, Palette, Download, Save, Sparkles, RefreshCw, Image, Loader2, X, ArrowRight, Phone, Mail, CheckCircle, Lock } from "lucide-react";
+import { Wand2, Upload, Palette, Download, Save, Sparkles, RefreshCw, Image, Loader2, X, ArrowRight, Phone, Mail, CheckCircle, Camera } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import { Button, Input, useToast } from "../components/ui/index";
 import { aiApi } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import heroImage from "../assets/hero-painting.jpg";
 
-const roomTypes = [
-  { value: "livingRoom", label: "Living Room" },
-  { value: "bedroom", label: "Bedroom" },
-  { value: "kitchen", label: "Kitchen" },
-  { value: "bathroom", label: "Bathroom" },
-  { value: "diningRoom", label: "Dining Room" },
-  { value: "office", label: "Home Office" },
-];
-
-const moods = [
-  { value: "cozy", label: "Cozy & Warm" },
-  { value: "modern", label: "Modern & Clean" },
-  { value: "vibrant", label: "Vibrant & Bold" },
+// Popular paint colors for quick selection
+const paintColors = [
+  { name: "Warm White", hex: "#FAF7F2", prompt: "warm white walls" },
+  { name: "Light Grey", hex: "#D3D3D3", prompt: "light grey walls" },
+  { name: "Soft Beige", hex: "#E8DCC4", prompt: "soft beige walls" },
+  { name: "Sky Blue", hex: "#87CEEB", prompt: "light sky blue walls" },
+  { name: "Sage Green", hex: "#B2BEB5", prompt: "sage green walls" },
+  { name: "Blush Pink", hex: "#F4C2C2", prompt: "soft blush pink walls" },
+  { name: "Navy Blue", hex: "#1E3A5F", prompt: "deep navy blue walls" },
+  { name: "Charcoal", hex: "#36454F", prompt: "charcoal grey walls" },
+  { name: "Terracotta", hex: "#C96847", prompt: "warm terracotta walls" },
+  { name: "Lavender", hex: "#B8A9C9", prompt: "soft lavender walls" },
+  { name: "Olive Green", hex: "#708238", prompt: "olive green walls" },
+  { name: "Cream Yellow", hex: "#FFFDD0", prompt: "cream yellow walls" },
 ];
 
 const RoomVisualizer = () => {
@@ -27,14 +28,12 @@ const RoomVisualizer = () => {
   const { toast } = useToast();
   const fileInputRef = useRef(null);
 
-  const [prompt, setPrompt] = useState("");
   const [uploadedImage, setUploadedImage] = useState(null);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState("livingRoom");
-  const [selectedMood, setSelectedMood] = useState("modern");
-  const [colorSuggestions, setColorSuggestions] = useState([]);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [additionalDetails, setAdditionalDetails] = useState("");
   const [estimatedTime, setEstimatedTime] = useState(null);
 
   const handleImageUpload = (e) => {
@@ -52,26 +51,32 @@ const RoomVisualizer = () => {
 
   const removeUploadedImage = () => {
     setUploadedImage(null);
+    setGeneratedImage(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const fetchColorSuggestions = async () => {
-    try {
-      const response = await aiApi.getColorSuggestions(selectedRoom, selectedMood);
-      setColorSuggestions(response.colors || []);
-    } catch (error) {
-      console.error("Failed to get color suggestions:", error);
-    }
+  const handleColorSelect = (color) => {
+    setSelectedColor(color);
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      toast({ title: "Description required", description: "Please describe how you want your room to look", variant: "destructive" });
+    if (!uploadedImage) {
+      toast({ title: "Photo required", description: "Please upload a photo of your room first", variant: "destructive" });
+      return;
+    }
+
+    if (!selectedColor) {
+      toast({ title: "Color required", description: "Please select a wall color", variant: "destructive" });
       return;
     }
 
     setIsGenerating(true);
     setEstimatedTime(null);
+
+    // Build prompt: selected color + any additional details
+    const prompt = additionalDetails
+      ? `${selectedColor.prompt}, ${additionalDetails}`
+      : selectedColor.prompt;
 
     try {
       const response = await aiApi.visualize(prompt, uploadedImage);
@@ -101,7 +106,7 @@ const RoomVisualizer = () => {
 
     setIsSaving(true);
     try {
-      await aiApi.saveDesign(generatedImage, prompt, selectedRoom);
+      await aiApi.saveDesign(generatedImage, selectedColor?.prompt || "", "room");
       toast({ title: "Design saved!", description: "You can view it in your profile" });
     } catch (error) {
       toast({ title: "Save failed", description: error.message || "Failed to save design", variant: "destructive" });
@@ -120,16 +125,9 @@ const RoomVisualizer = () => {
     document.body.removeChild(link);
   };
 
-  const addColorToPrompt = (color) => {
-    const colorName = color.split(" ")[0];
-    if (!prompt.includes(colorName)) {
-      setPrompt((prev) => prev ? `${prev}, ${colorName} walls` : `${colorName} walls`);
-    }
-  };
-
   return (
     <Layout>
-      {/* Hero Section - Same as Contact/Services */}
+      {/* Hero Section */}
       <section className="relative py-32 bg-primary">
         <div className="absolute inset-0">
           <img src={heroImage} alt="AI Room Visualizer" className="w-full h-full object-cover opacity-20" />
@@ -139,20 +137,20 @@ const RoomVisualizer = () => {
             AI ROOM VISUALIZER
           </h1>
           <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-            See your dream room before you paint. Powered by AI technology.
+            Upload your room photo and see how it looks with different paint colors!
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-primary-foreground/70">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-accent" />
-              <span>Free to Use</span>
+              <span>Upload Any Room</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-accent" />
-              <span>Instant Results</span>
+              <span>Choose Paint Color</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-accent" />
-              <span>Save to Profile</span>
+              <span>See Instant Results</span>
             </div>
           </div>
         </div>
@@ -161,10 +159,9 @@ const RoomVisualizer = () => {
       {/* Main Content */}
       <section className="section-padding">
         <div className="container-custom">
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-            {/* Left Column - Settings & Tips */}
+            {/* Left Column - How It Works */}
             <div className="space-y-6">
               <h2 className="text-2xl font-heading font-bold text-foreground mb-6">How It Works</h2>
 
@@ -173,22 +170,22 @@ const RoomVisualizer = () => {
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Choose Room Type</h3>
-                    <p className="text-sm text-muted-foreground">Select the type of room you want to visualize</p>
+                    <h3 className="font-semibold text-foreground">Upload Your Room Photo</h3>
+                    <p className="text-sm text-muted-foreground">Take a clear photo of your room and upload it</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Describe Your Vision</h3>
-                    <p className="text-sm text-muted-foreground">Tell us the colors, style, and mood you want</p>
+                    <h3 className="font-semibold text-foreground">Choose Paint Color</h3>
+                    <p className="text-sm text-muted-foreground">Select the wall color you want to try</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Generate & Save</h3>
-                    <p className="text-sm text-muted-foreground">Get your AI visualization and save it</p>
+                    <h3 className="font-semibold text-foreground">See Your Room Transformed</h3>
+                    <p className="text-sm text-muted-foreground">AI generates your room with new paint colors</p>
                   </div>
                 </div>
               </div>
@@ -197,24 +194,24 @@ const RoomVisualizer = () => {
               <div className="bg-secondary/50 rounded-2xl p-6 mt-8">
                 <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-accent" />
-                  Pro Tips
+                  Photo Tips
                 </h3>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    Be specific with colors (e.g., "light sage green")
+                    Take photo in good lighting
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    Mention lighting preferences
+                    Show walls clearly in the frame
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    Include style keywords (modern, rustic, minimal)
+                    Capture the room from a corner for best view
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    Describe furniture and decor
+                    Keep the photo straight and level
                   </li>
                 </ul>
               </div>
@@ -240,166 +237,182 @@ const RoomVisualizer = () => {
             {/* Right Column - Main Form & Result */}
             <div className="lg:col-span-2">
               <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
-                <h2 className="text-2xl font-heading font-bold text-foreground mb-6">Create Your Visualization</h2>
 
-                <div className="space-y-6">
-                  {/* Room & Style Selection */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Room Type</label>
-                      <select
-                        value={selectedRoom}
-                        onChange={(e) => { setSelectedRoom(e.target.value); fetchColorSuggestions(); }}
-                        className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-                      >
-                        {roomTypes.map((room) => (
-                          <option key={room.value} value={room.value}>{room.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Style / Mood</label>
-                      <select
-                        value={selectedMood}
-                        onChange={(e) => { setSelectedMood(e.target.value); fetchColorSuggestions(); }}
-                        className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-                      >
-                        {moods.map((mood) => (
-                          <option key={mood.value} value={mood.value}>{mood.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                {/* Step 1: Upload Photo */}
+                <div className="mb-8">
+                  <h2 className="text-2xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                    Upload Your Room Photo
+                  </h2>
+                  <p className="text-muted-foreground mb-4">Take a photo of your room and upload it here</p>
 
-                  {/* Color Suggestions */}
-                  {colorSuggestions.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Suggested Colors (click to add)</label>
-                      <div className="flex flex-wrap gap-2">
-                        {colorSuggestions.map((color, index) => {
-                          const hexMatch = color.match(/#[A-Fa-f0-9]{6}/);
-                          const hex = hexMatch ? hexMatch[0] : "#888888";
-                          const name = color.split(" ")[0];
-                          return (
-                            <button
-                              key={index}
-                              onClick={() => addColorToPrompt(color)}
-                              className="flex items-center gap-2 px-3 py-2 rounded-full border border-border hover:border-accent transition-colors"
-                            >
-                              <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: hex }} />
-                              <span className="text-sm">{name}</span>
-                            </button>
-                          );
-                        })}
+                  {uploadedImage ? (
+                    <div className="relative rounded-xl overflow-hidden border-2 border-accent">
+                      <img src={uploadedImage} alt="Your Room" className="w-full h-64 object-cover" />
+                      <button
+                        onClick={removeUploadedImage}
+                        className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                      <div className="absolute bottom-3 left-3 bg-black/60 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        Photo uploaded!
                       </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-accent/50 rounded-xl p-12 text-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-all"
+                    >
+                      <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Camera className="w-8 h-8 text-accent" />
+                      </div>
+                      <p className="text-lg font-medium text-foreground mb-2">Click to upload your room photo</p>
+                      <p className="text-sm text-muted-foreground">PNG, JPG up to 10MB</p>
                     </div>
                   )}
-
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Describe Your Vision *</label>
-                    <textarea
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="E.g., Light blue walls with white trim, modern minimalist style, large windows with natural light, wooden floors..."
-                      rows={4}
-                      className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent resize-none"
-                    />
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {["white walls", "natural light", "modern style", "wooden floors"].map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => setPrompt((prev) => prev ? `${prev}, ${tag}` : tag)}
-                          className="text-xs px-3 py-1 rounded-full bg-secondary hover:bg-accent/20 transition-colors"
-                        >
-                          + {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Image Upload */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Upload Room Photo (Optional)</label>
-                    {uploadedImage ? (
-                      <div className="relative rounded-lg overflow-hidden">
-                        <img src={uploadedImage} alt="Uploaded" className="w-full h-40 object-cover" />
-                        <button
-                          onClick={removeUploadedImage}
-                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-accent transition-colors"
-                      >
-                        <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Click to upload (PNG, JPG up to 10MB)</p>
-                      </div>
-                    )}
-                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                  </div>
-
-                  {/* Generate Button */}
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !prompt.trim()}
-                    className="w-full py-6 text-lg"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Generating... (20-30 seconds)
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="w-5 h-5 mr-2" />
-                        Generate Visualization
-                      </>
-                    )}
-                  </Button>
-
-                  {estimatedTime && (
-                    <p className="text-sm text-center text-amber-600 bg-amber-50 rounded-lg p-3">
-                      AI model is loading. Please wait ~{estimatedTime} seconds and try again.
-                    </p>
-                  )}
-
-                  {/* Result */}
-                  {generatedImage && (
-                    <div className="mt-8 pt-8 border-t border-border">
-                      <h3 className="text-xl font-heading font-bold text-foreground mb-4">Your Visualization</h3>
-                      <div className="rounded-lg overflow-hidden mb-4">
-                        <img src={generatedImage} alt="Generated visualization" className="w-full" />
-                      </div>
-                      <div className="flex flex-wrap gap-3">
-                        <Button onClick={handleGenerate} variant="outline" className="flex-1">
-                          <RefreshCw className="w-4 h-4 mr-2" /> Regenerate
-                        </Button>
-                        <Button onClick={handleDownload} variant="outline" className="flex-1">
-                          <Download className="w-4 h-4 mr-2" /> Download
-                        </Button>
-                        <Button onClick={handleSaveDesign} disabled={isSaving || !user} className="flex-1">
-                          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                          {user ? "Save" : "Login to Save"}
-                        </Button>
-                      </div>
-
-                      {/* CTA */}
-                      <div className="mt-6 p-6 bg-accent/10 rounded-lg text-center">
-                        <p className="font-semibold text-foreground mb-3">Love this design? Let's make it real!</p>
-                        <Link to="/quote">
-                          <Button className="btn-primary">
-                            Get a Free Quote <ArrowRight className="w-4 h-4 ml-2" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  )}
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </div>
+
+                {/* Step 2: Choose Paint Color */}
+                <div className="mb-8">
+                  <h2 className="text-2xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                    Choose Wall Paint Color
+                  </h2>
+                  <p className="text-muted-foreground mb-4">Select the color you want to see on your walls</p>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {paintColors.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => handleColorSelect(color)}
+                        className={`group relative p-3 rounded-xl border-2 transition-all ${selectedColor?.name === color.name
+                            ? 'border-accent ring-2 ring-accent ring-offset-2'
+                            : 'border-border hover:border-accent/50'
+                          }`}
+                      >
+                        <div
+                          className="w-full aspect-square rounded-lg mb-2 shadow-inner"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <p className="text-xs font-medium text-center truncate">{color.name}</p>
+                        {selectedColor?.name === color.name && (
+                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-3 h-3 text-accent-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Step 3: Additional Details (Optional) */}
+                <div className="mb-8">
+                  <h2 className="text-xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-secondary text-foreground rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                    Additional Details
+                    <span className="text-sm font-normal text-muted-foreground">(Optional)</span>
+                  </h2>
+                  <p className="text-muted-foreground mb-4">Add any extra styling preferences</p>
+
+                  <input
+                    type="text"
+                    value={additionalDetails}
+                    onChange={(e) => setAdditionalDetails(e.target.value)}
+                    placeholder="e.g., modern style, white trim, natural lighting..."
+                    className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+
+                  {/* Quick add tags */}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {["modern style", "white trim", "natural light", "matte finish", "accent wall"].map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => setAdditionalDetails((prev) => prev ? `${prev}, ${tag}` : tag)}
+                        className="text-xs px-3 py-1.5 rounded-full bg-secondary hover:bg-accent/20 transition-colors"
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !uploadedImage || !selectedColor}
+                  className="w-full py-6 text-lg"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Generating Your Room... (20-30 seconds)
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-5 h-5 mr-2" />
+                      {!uploadedImage ? "Upload Photo First" : !selectedColor ? "Select a Color" : "See Your Room with New Paint!"}
+                    </>
+                  )}
+                </Button>
+
+                {estimatedTime && (
+                  <p className="text-sm text-center text-amber-600 bg-amber-50 rounded-lg p-3 mt-4">
+                    AI model is loading. Please wait ~{estimatedTime} seconds and try again.
+                  </p>
+                )}
+
+                {/* Result - Before/After Comparison */}
+                {generatedImage && (
+                  <div className="mt-8 pt-8 border-t border-border">
+                    <h3 className="text-xl font-heading font-bold text-foreground mb-4 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-accent" />
+                      Your Room Transformation
+                    </h3>
+
+                    {/* Before/After Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="relative rounded-xl overflow-hidden">
+                        <img src={uploadedImage} alt="Original Room" className="w-full h-64 object-cover" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                          <p className="text-white font-semibold">Before</p>
+                        </div>
+                      </div>
+                      <div className="relative rounded-xl overflow-hidden">
+                        <img src={generatedImage} alt="Transformed Room" className="w-full h-64 object-cover" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                          <p className="text-white font-semibold">After - {selectedColor?.name}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-3">
+                      <Button onClick={handleGenerate} variant="outline" className="flex-1">
+                        <RefreshCw className="w-4 h-4 mr-2" /> Try Again
+                      </Button>
+                      <Button onClick={handleDownload} variant="outline" className="flex-1">
+                        <Download className="w-4 h-4 mr-2" /> Download
+                      </Button>
+                      <Button onClick={handleSaveDesign} disabled={isSaving || !user} className="flex-1">
+                        {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        {user ? "Save" : "Login to Save"}
+                      </Button>
+                    </div>
+
+                    {/* CTA */}
+                    <div className="mt-6 p-6 bg-accent/10 rounded-xl text-center">
+                      <p className="font-semibold text-foreground mb-3">Love this look? Let's make it real!</p>
+                      <Link to="/quote">
+                        <Button className="btn-primary">
+                          Get a Free Painting Quote <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
