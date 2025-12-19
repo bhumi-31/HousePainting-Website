@@ -11,6 +11,9 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
+    // Call the image generation service
+    const result = await generateImage({ prompt, imageBase64 });
+
     const image =
       result.type === 'base64'
         ? `data:image/png;base64,${result.image}`
