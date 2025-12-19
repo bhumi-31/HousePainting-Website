@@ -7,20 +7,20 @@ import { aiApi } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import heroImage from "../assets/hero-painting.jpg";
 
-// Popular paint colors for quick selection
+// Popular paint colors for quick selection - prompts optimized for wall-only changes
 const paintColors = [
-  { name: "Warm White", hex: "#FAF7F2", prompt: "warm white walls" },
-  { name: "Light Grey", hex: "#D3D3D3", prompt: "light grey walls" },
-  { name: "Soft Beige", hex: "#E8DCC4", prompt: "soft beige walls" },
-  { name: "Sky Blue", hex: "#87CEEB", prompt: "light sky blue walls" },
-  { name: "Sage Green", hex: "#B2BEB5", prompt: "sage green walls" },
-  { name: "Blush Pink", hex: "#F4C2C2", prompt: "soft blush pink walls" },
-  { name: "Navy Blue", hex: "#1E3A5F", prompt: "deep navy blue walls" },
-  { name: "Charcoal", hex: "#36454F", prompt: "charcoal grey walls" },
-  { name: "Terracotta", hex: "#C96847", prompt: "warm terracotta walls" },
-  { name: "Lavender", hex: "#B8A9C9", prompt: "soft lavender walls" },
-  { name: "Olive Green", hex: "#708238", prompt: "olive green walls" },
-  { name: "Cream Yellow", hex: "#FFFDD0", prompt: "cream yellow walls" },
+  { name: "Warm White", hex: "#FAF7F2", prompt: "repaint walls warm white color" },
+  { name: "Light Grey", hex: "#D3D3D3", prompt: "repaint walls light grey color" },
+  { name: "Soft Beige", hex: "#E8DCC4", prompt: "repaint walls soft beige color" },
+  { name: "Sky Blue", hex: "#87CEEB", prompt: "repaint walls light sky blue color" },
+  { name: "Sage Green", hex: "#B2BEB5", prompt: "repaint walls sage green color" },
+  { name: "Blush Pink", hex: "#F4C2C2", prompt: "repaint walls soft blush pink color" },
+  { name: "Navy Blue", hex: "#1E3A5F", prompt: "repaint walls deep navy blue color" },
+  { name: "Charcoal", hex: "#36454F", prompt: "repaint walls charcoal grey color" },
+  { name: "Terracotta", hex: "#C96847", prompt: "repaint walls warm terracotta color" },
+  { name: "Lavender", hex: "#B8A9C9", prompt: "repaint walls soft lavender color" },
+  { name: "Olive Green", hex: "#708238", prompt: "repaint walls olive green color" },
+  { name: "Cream Yellow", hex: "#FFFDD0", prompt: "repaint walls cream yellow color" },
 ];
 
 const RoomVisualizer = () => {
@@ -289,8 +289,8 @@ const RoomVisualizer = () => {
                         key={color.name}
                         onClick={() => handleColorSelect(color)}
                         className={`group relative p-3 rounded-xl border-2 transition-all ${selectedColor?.name === color.name
-                            ? 'border-accent ring-2 ring-accent ring-offset-2'
-                            : 'border-border hover:border-accent/50'
+                          ? 'border-accent ring-2 ring-accent ring-offset-2'
+                          : 'border-border hover:border-accent/50'
                           }`}
                       >
                         <div
