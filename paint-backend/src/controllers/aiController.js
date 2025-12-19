@@ -25,37 +25,46 @@ const visualizeRoom = async (req, res) => {
       ? `Professional interior design photo: modern room with ${prompt} walls, clean painted walls, wooden floor, natural daylight, furniture, high quality, 4k, photorealistic architectural photography, interior design magazine.`
       : `Professional interior design photo: ${prompt}. Beautiful room, clean walls, wooden floor, natural light, high quality, 4k, photorealistic architectural photography.`;
 
-    console.log('🚀 Calling Pollinations.ai API...');
+    console.log('🚀 Calling Hugging Face API...');
     console.log('📝 Prompt:', enhancedPrompt);
 
-    // Use Pollinations.ai - FREE API, no key needed!
-    const encodedPrompt = encodeURIComponent(enhancedPrompt);
-    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=768&nologo=true&seed=${Date.now()}`;
+    // Use Hugging Face Inference API with Stable Diffusion
+    const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
 
-    console.log('🔗 API URL:', pollinationsUrl);
+    if (!HF_TOKEN) {
+      console.error('❌ HUGGINGFACE_API_TOKEN not found in environment');
+      return res.status(500).json({
+        success: false,
+        message: 'AI service not configured. Please add HUGGINGFACE_API_TOKEN.',
+      });
+    }
 
-    // Create AbortController for timeout (node-fetch v2 doesn't support timeout option)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
-    const response = await fetch(pollinationsUrl, {
-      method: 'GET',
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'image/png,image/jpeg,image/*,*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://pollinations.ai/'
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${HF_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: enhancedPrompt,
+        }),
+        signal: controller.signal
       }
-    });
+    );
 
     clearTimeout(timeoutId);
 
     console.log('📡 Response status:', response.status);
 
     if (!response.ok) {
-      console.error('❌ Pollinations API error:', response.status);
-      throw new Error(`Image generation failed with status ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ Hugging Face API error:', response.status, errorText);
+      throw new Error(`Image generation failed: ${response.status}`);
     }
 
     // Get the image buffer and convert to base64
@@ -71,7 +80,7 @@ const visualizeRoom = async (req, res) => {
         : 'New room visualization created! 🎨',
       image: generatedBase64,
       prompt: prompt,
-      model: 'pollinations-ai',
+      model: 'stable-diffusion-xl',
       type: 'generate'
     });
 
