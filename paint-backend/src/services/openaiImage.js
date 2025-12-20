@@ -34,7 +34,7 @@ async function generateImage({ prompt, imageBase64 }) {
       });
 
       const res = await openai.images.edit({
-        model: "gpt-image-1",
+        model: "gpt-image-1.5",
         image: imageFile,
         prompt: enhancedPrompt,
         size: "1536x1024",
@@ -49,7 +49,7 @@ async function generateImage({ prompt, imageBase64 }) {
 
     // no image → regular generation
     const result = await openai.images.generate({
-      model: "gpt-image-1",
+      model: "gpt-image-1.5",
       prompt: enhancedPrompt,
       size: "1536x1024",
     });
