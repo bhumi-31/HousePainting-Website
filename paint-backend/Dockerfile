@@ -4,9 +4,9 @@
 # Think of this as a "recipe" to build a container
 # Each line is a step in building your app's environment
 
-# Step 1: Start with a base image (Node.js v18)
-# Like choosing a pre-configured computer with Node.js installed
-FROM node:18-alpine
+# Step 1: Start with a base image (Node.js v20)
+# OpenAI SDK requires Node 20+ for file uploads
+FROM node:20-alpine
 
 # Step 2: Set working directory inside the container
 # This is like "cd /app" - all commands run from here
