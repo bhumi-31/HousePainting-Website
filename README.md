@@ -1,4 +1,4 @@
-# 🏠 Chandan House Painting
+# 🏠House Painting Website
 
 ![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)
 ![Node.js](https://img.shields.io/badge/node-%3E=18-green?logo=node.js)
