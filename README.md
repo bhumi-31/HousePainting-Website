@@ -51,7 +51,7 @@ A full-stack web application for a professional house painting business serving 
 | Database | MongoDB Atlas |
 | Auth | JWT, Google OAuth 2.0 |
 | Images | Cloudinary |
-| AI | HuggingFace API |
+| AI | Open API (gpt-image-1)|
 | Email | Nodemailer (Gmail SMTP) |
 | Deployment | Docker, AWS EC2 |
 
