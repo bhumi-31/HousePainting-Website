@@ -23,11 +23,11 @@ const CTASection = () => {
               </button>
             </Link>
             <a
-              href="tel:1-800-555-0123"
+              href="tel:+17059510764"
               className="bg-accent-foreground text-accent font-semibold px-8 py-4 rounded-md transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center"
             >
               <Phone className="mr-2 w-5 h-5" />
-              1-800-555-0123
+              +1 (705) 951-0764
             </a>
           </div>
         </div>

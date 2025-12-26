@@ -64,7 +64,7 @@ const Navbar = () => {
           {/* Right Side */}
           <div className="hidden lg:flex items-center gap-4">
             <a
-              href="tel:7059510764"
+              href="tel:+17059510764"
               className="flex items-center gap-2 text-foreground hover:text-accent transition-colors"
             >
               <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
@@ -72,7 +72,7 @@ const Navbar = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Call Us</p>
-                <p className="font-semibold">705-951-0764</p>
+                <p className="font-semibold">+1 (705) 951-0764</p>
               </div>
             </a>
 
@@ -116,7 +116,7 @@ const Navbar = () => {
                         <User className="w-4 h-4 text-muted-foreground" />
                         <span>My Profile</span>
                       </Link>
-                      
+
                       {isAdmin && (
                         <Link
                           to="/admin"
@@ -181,8 +181,8 @@ const Navbar = () => {
               <div className="pt-4 border-t border-border flex flex-col gap-3">
                 {user ? (
                   <>
-                    <Link 
-                      to="/profile" 
+                    <Link
+                      to="/profile"
                       onClick={() => setIsOpen(false)}
                       className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-secondary"
                     >

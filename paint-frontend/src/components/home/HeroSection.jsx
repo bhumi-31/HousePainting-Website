@@ -35,25 +35,25 @@ const SERVICE_AREAS = {
 
 const checkPostalCode = (postalCode) => {
   const cleaned = postalCode.toUpperCase().replace(/\s/g, '');
-  
+
   // Check 3-character prefixes first (more specific)
   const prefix3 = cleaned.substring(0, 3);
   if (SERVICE_AREAS[prefix3]) {
     return { valid: true, area: SERVICE_AREAS[prefix3] };
   }
-  
+
   // Check 2-character prefixes
   const prefix2 = cleaned.substring(0, 2);
   if (SERVICE_AREAS[prefix2]) {
     return { valid: true, area: SERVICE_AREAS[prefix2] };
   }
-  
+
   // Check 1-character prefix (for Toronto 'M')
   const prefix1 = cleaned.substring(0, 1);
   if (SERVICE_AREAS[prefix1]) {
     return { valid: true, area: SERVICE_AREAS[prefix1] };
   }
-  
+
   return { valid: false, area: null };
 };
 
@@ -65,10 +65,10 @@ const HeroSection = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!postalCode.trim()) return;
-    
+
     const checkResult = checkPostalCode(postalCode);
     setResult(checkResult);
-    
+
     if (checkResult.valid) {
       // Wait a moment to show success, then navigate
       setTimeout(() => {
@@ -106,7 +106,7 @@ const HeroSection = () => {
             <Star className="w-4 h-4 fill-accent" />
             2+ Years of Excellence
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-heading font-black leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
             <span className="text-white">PROFESSIONAL</span>
             <br />
@@ -114,7 +114,7 @@ const HeroSection = () => {
             <br />
             <span className="text-white">SERVICES</span>
           </h1>
-          
+
           <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-xl animate-fade-up leading-relaxed" style={{ animationDelay: "0.2s" }}>
             Transform your home with our expert painting services. Quality craftsmanship, attention to detail, and customer satisfaction guaranteed.
           </p>
@@ -156,8 +156,8 @@ const HeroSection = () => {
             </div>
             <div>
               <p className="text-gray-400 text-sm">Call for Free Estimate</p>
-              <a href="tel:1-800-555-0123" className="text-2xl font-heading font-bold text-white hover:text-accent transition-colors">
-                705-951-0764
+              <a href="tel:+17059510764" className="text-2xl font-heading font-bold text-white hover:text-accent transition-colors">
+                +1 (705) 951-0764
               </a>
             </div>
           </div>
@@ -174,7 +174,7 @@ const HeroSection = () => {
             <h3 className="font-heading font-bold text-2xl text-gray-900">Service Request</h3>
           </div>
           <p className="text-gray-500 mb-6 ml-13">Let Us Help You!</p>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -187,14 +187,13 @@ const HeroSection = () => {
                 className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl text-lg focus:border-accent focus:outline-none transition-colors bg-gray-50 focus:bg-white"
               />
             </div>
-            
+
             {/* Result Message */}
             {result && (
-              <div className={`p-4 rounded-xl flex items-start gap-3 ${
-                result.valid 
-                  ? 'bg-green-50 border border-green-200' 
+              <div className={`p-4 rounded-xl flex items-start gap-3 ${result.valid
+                  ? 'bg-green-50 border border-green-200'
                   : 'bg-red-50 border border-red-200'
-              }`}>
+                }`}>
                 {result.valid ? (
                   <>
                     <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -214,21 +213,21 @@ const HeroSection = () => {
                 )}
               </div>
             )}
-            
+
             <Button type="submit" className="w-full bg-[#0a1628] hover:bg-[#162544] text-white py-4 text-lg rounded-xl font-semibold shadow-lg transition-all hover:shadow-xl">
               <span className="mr-2">—</span>
               Request A Free Estimate
               <span className="ml-2">—</span>
             </Button>
           </form>
-          
+
           <p className="text-xs text-gray-500 text-center mt-4">
             Serving GTA, Waterloo, Niagara & Barrie regions
           </p>
-          
+
           {/* Trust indicators */}
           <div className="flex items-center justify-center gap-1 mt-4">
-            {[1,2,3,4,5].map((star) => (
+            {[1, 2, 3, 4, 5].map((star) => (
               <Star key={star} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
             ))}
             <span className="text-sm text-gray-600 ml-2">500+ Happy Customers</span>

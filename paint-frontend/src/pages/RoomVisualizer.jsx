@@ -223,7 +223,7 @@ const RoomVisualizer = () => {
                   <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
                     <Phone className="w-5 h-5 text-accent" />
                   </div>
-                  <a href="tel:7059510764" className="text-muted-foreground hover:text-accent">705-951-0764</a>
+                  <a href="tel:+17059510764" className="text-muted-foreground hover:text-accent">+1 (705) 951-0764</a>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">

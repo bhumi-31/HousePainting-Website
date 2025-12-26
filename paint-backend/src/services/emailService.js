@@ -1,22 +1,22 @@
 const transporter = require('../config/email');
 
 const sendEmail = async (options) => {
-    try {
-        const mailOptions = {
-            from: process.env.EMAIL_FROM,
-            to: options.to || options.email,
-            subject: options.subject,
-            html: options.html
-        };
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: options.to || options.email,
+      subject: options.subject,
+      html: options.html
+    };
 
-        const info = await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
 
-        console.log('Email sent:', info.messageId);
-        return { success: true, messageId: info.messageId };
-    } catch (error) {
-        console.error('Email send error:', error.message);
-        return { success: false, error: error.message };
-    }
+    console.log('Email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Email send error:', error.message);
+    return { success: false, error: error.message };
+  }
 };
 
 // Export sendEmail for direct use
@@ -36,7 +36,7 @@ const emailWrapper = (content) => `
   <p style="font-size: 12px; color: #888; text-align: center;">
     Chandan House Painting<br>
     36 Harbourtown Crescent, Ontario, Canada<br>
-    705-951-0764 | chandansingh3016@gmail.com
+    +1 (705) 951-0764 | chandansingh3016@gmail.com
   </p>
 </body>
 </html>
@@ -61,7 +61,7 @@ exports.sendWelcomeEmail = async (user) => {
     </p>
     
     <p style="margin-top: 25px; color: #666;">
-      Questions? Call us at 705-951-0764
+      Questions? Call us at +1 (705) 951-0764
     </p>
   `);
 
@@ -98,7 +98,7 @@ exports.sendQuoteConfirmationEmail = async (quote, user) => {
     <p style="color: #666; font-size: 14px;">*This is a preliminary estimate. Final quote will be provided after review.</p>
     
     <p style="margin-top: 25px; color: #666;">
-      Questions? Call us at 705-951-0764
+      Questions? Call us at +1 (705) 951-0764
     </p>
   `);
 
@@ -113,7 +113,7 @@ exports.sendQuoteConfirmationEmail = async (quote, user) => {
 exports.sendFinalQuoteEmail = async (quote, user) => {
   const finalPrice = quote.finalPrice || quote.estimatedPrice;
   const discount = quote.discount || 0;
-  
+
   const html = emailWrapper(`
     <h2 style="color: #1e3a5f; margin-bottom: 20px;">Your Quote is Ready</h2>
     
@@ -144,7 +144,7 @@ exports.sendFinalQuoteEmail = async (quote, user) => {
     </p>
     
     <p style="margin-top: 25px; color: #666;">
-      Questions? Call us at 705-951-0764
+      Questions? Call us at +1 (705) 951-0764
     </p>
   `);
 
@@ -178,7 +178,7 @@ exports.sendQuoteAcceptedEmail = async (quote, user) => {
     </ol>
     
     <p style="margin-top: 25px; color: #666;">
-      Need to reschedule? Call us at 705-951-0764
+      Need to reschedule? Call us at +1 (705) 951-0764
     </p>
   `);
 

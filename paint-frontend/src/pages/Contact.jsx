@@ -23,7 +23,7 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
       toast({ title: "Please fill in all required fields", variant: "destructive" });
       return;
@@ -72,8 +72,8 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Phone</h3>
-                    <a href="tel:7059510764" className="text-muted-foreground hover:text-accent">
-                      705-951-0764
+                    <a href="tel:+17059510764" className="text-muted-foreground hover:text-accent">
+                      +1 (705) 951-0764
                     </a>
                   </div>
                 </div>
@@ -109,9 +109,9 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Business Hours</h3>
-                      <p className="text-muted-foreground">
-                        Open 24/7
-                      </p>
+                    <p className="text-muted-foreground">
+                      Open 24/7
+                    </p>
                   </div>
                 </div>
               </div>

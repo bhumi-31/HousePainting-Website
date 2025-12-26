@@ -65,7 +65,7 @@ const ForgotPassword = () => {
               </p>
               <div className="flex items-center gap-2 text-white/80">
                 <Phone className="w-4 h-4" />
-                <span>705-951-0764</span>
+                <span>+1 (705) 951-0764</span>
               </div>
             </div>
           </div>

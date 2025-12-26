@@ -62,7 +62,7 @@ const Footer = () => {
                 <Phone className="w-5 h-5 text-accent mt-0.5" />
                 <div>
                   <p className="font-semibold">Phone</p>
-                  <a href="tel:7059510764" className="text-primary-foreground/80 hover:text-accent transition-colors">705-951-0764</a>
+                  <a href="tel:+17059510764" className="text-primary-foreground/80 hover:text-accent transition-colors">+1 (705) 951-0764</a>
                 </div>
               </li>
               <li className="flex items-start gap-3">

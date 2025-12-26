@@ -151,7 +151,7 @@ export default function PrivacyPolicy() {
                                     </p>
                                     <div className="space-y-2 text-muted-foreground">
                                         <p><strong>Email:</strong> chandansingh3016@gmail.com</p>
-                                        <p><strong>Phone:</strong> 705-951-0764</p>
+                                        <p><strong>Phone:</strong> +1 (705) 951-0764</p>
                                         <p><strong>Address:</strong> 36 Harbourtown Crescent, Ontario, Canada</p>
                                     </div>
                                 </div>

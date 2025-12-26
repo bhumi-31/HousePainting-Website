@@ -8,8 +8,7 @@ import heroImage from "../assets/hero-painting.jpg";
 import { useAuth } from "../context/AuthContext";
 import { quotesApi } from "../lib/api";
 
-// Serviceable postal code prefixes (first 3 characters - FSA codes)
-// These are areas around Barrie/Ontario where service is available
+// Serviceable postal codes
 const serviceablePostalCodes = [
   // Barrie area
   "L4M", "L4N", "L9X", "L9Y",
@@ -126,7 +125,7 @@ export default function Quote() {
       formatted = cleanedValue.substring(0, 3) + ' ' + cleanedValue.substring(3, 6);
     }
     setFormData(prev => ({ ...prev, postalCode: formatted }));
-    
+
     if (cleanedValue.length >= 3) {
       const serviceable = isPostalCodeServiceable(cleanedValue);
       setIsServiceable(serviceable);
@@ -161,9 +160,9 @@ export default function Quote() {
     const size = parseInt(formData.roomSize) || 0;
     const quality = paintQualities.find((q) => q.value === formData.paintQuality);
     const coats = parseInt(formData.numberOfCoats) || 2;
-    
+
     let total = size * basePrice * (quality?.priceMultiplier || 1) * (coats / 2);
-    
+
     formData.additionalServices.forEach((service) => {
       const found = additionalServices.find((s) => s.value === service);
       if (found) total += found.price;
@@ -174,7 +173,7 @@ export default function Quote() {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
       const quoteData = {
@@ -259,18 +258,16 @@ export default function Quote() {
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex items-center gap-2">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
-                    step >= s
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${step >= s
                       ? "bg-primary text-primary-foreground"
                       : "bg-border text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   {step > s ? <Check className="w-5 h-5" /> : s}
                 </div>
                 <span
-                  className={`hidden md:block text-sm font-medium ${
-                    step >= s ? "text-foreground" : "text-muted-foreground"
-                  }`}
+                  className={`hidden md:block text-sm font-medium ${step >= s ? "text-foreground" : "text-muted-foreground"
+                    }`}
                 >
                   {s === 1 && "Project Details"}
                   {s === 2 && "Options"}
@@ -310,7 +307,7 @@ export default function Quote() {
                 </Link>
               </div>
               <p className="text-sm text-muted-foreground mt-6">
-                Have questions? <a href="tel:7059510764" className="text-accent hover:underline">Call us directly</a>
+                Have questions? <a href="tel:+17059510764" className="text-accent hover:underline">Call us directly</a>
               </p>
             </div>
           </div>
@@ -359,456 +356,456 @@ export default function Quote() {
                 </Link>
               </div>
               <p className="text-sm text-muted-foreground mt-6">
-                Questions? Call us at <a href="tel:7059510764" className="text-accent hover:underline">705-951-0764</a>
+                Questions? Call us at <a href="tel:+17059510764" className="text-accent hover:underline">+1 (705) 951-0764</a>
               </p>
             </div>
           </div>
         </section>
       ) : (
-      /* Form */
-      <section className="section-padding bg-background">
-        <div className="container-custom">
-          <div className="max-w-2xl mx-auto">
-            {/* Step 1: Project Details */}
-            {step === 1 && (
-              <div className="space-y-6 animate-fade-in">
-                <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
-                  Tell us about your project
-                </h2>
+        /* Form */
+        <section className="section-padding bg-background">
+          <div className="container-custom">
+            <div className="max-w-2xl mx-auto">
+              {/* Step 1: Project Details */}
+              {step === 1 && (
+                <div className="space-y-6 animate-fade-in">
+                  <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
+                    Tell us about your project
+                  </h2>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Service Type *
-                  </label>
-                  <Select
-                    value={getSelectedLabel(formData.serviceType, serviceTypes)}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, serviceType: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {serviceTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Service Type *
+                    </label>
+                    <Select
+                      value={getSelectedLabel(formData.serviceType, serviceTypes)}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, serviceType: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select service type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {serviceTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Room Type *
-                  </label>
-                  <Select
-                    value={getSelectedLabel(formData.roomType, roomTypes)}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, roomType: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roomTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Room Type *
+                    </label>
+                    <Select
+                      value={getSelectedLabel(formData.roomType, roomTypes)}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, roomType: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roomTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Room Size (sq ft) *
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder="e.g., 200"
-                    value={formData.roomSize}
-                    onChange={(e) =>
-                      setFormData({ ...formData, roomSize: e.target.value })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Measure length × width of the room
-                  </p>
-                </div>
-
-                {/* Postal Code Field */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    <MapPin className="w-4 h-4 inline mr-1" />
-                    Postal Code *
-                  </label>
-                  <Input
-                    placeholder="e.g., L4M 1A1"
-                    value={formData.postalCode}
-                    onChange={(e) => handlePostalCodeChange(e.target.value)}
-                    maxLength={7}
-                    className={postalCodeChecked ? (isServiceable ? 'border-green-500' : 'border-red-500') : ''}
-                  />
-                  
-                  {/* Service availability feedback */}
-                  {postalCodeChecked && isServiceable === true && (
-                    <div className="flex items-center gap-2 mt-2 text-green-600">
-                      <Check className="w-4 h-4" />
-                      <span className="text-sm">Great! We provide services in your area.</span>
-                    </div>
-                  )}
-                  
-                  {postalCodeChecked && isServiceable === false && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-3">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-red-800">Service Not Available</p>
-                          <p className="text-sm text-red-600 mt-1">
-                            Sorry, we do not currently provide services in this area. We serve the Greater Toronto Area, Barrie, Orillia, and surrounding regions.
-                          </p>
-                          <p className="text-sm text-red-600 mt-2">
-                            Please call us at <a href="tel:7059510764" className="font-medium underline">705-951-0764</a> to discuss your project.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {!postalCodeChecked && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Room Size (sq ft) *
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 200"
+                      value={formData.roomSize}
+                      onChange={(e) =>
+                        setFormData({ ...formData, roomSize: e.target.value })
+                      }
+                    />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Enter your postal code to check service availability
+                      Measure length × width of the room
                     </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Options */}
-            {step === 2 && (
-              <div className="space-y-6 animate-fade-in">
-                <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
-                  Choose your options
-                </h2>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Paint Quality *
-                  </label>
-                  <Select
-                    value={getSelectedLabel(formData.paintQuality, paintQualities)}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, paintQuality: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paintQualities.map((q) => (
-                        <SelectItem key={q.value} value={q.value}>
-                          {q.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Number of Coats
-                  </label>
-                  <Select
-                    value={formData.numberOfCoats === "1" ? "1 Coat" : formData.numberOfCoats === "2" ? "2 Coats (Recommended)" : "3 Coats"}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, numberOfCoats: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 Coat</SelectItem>
-                      <SelectItem value="2">2 Coats (Recommended)</SelectItem>
-                      <SelectItem value="3">3 Coats</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-4">
-                    Additional Services
-                  </label>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {additionalServices.map((service) => (
-                      <label
-                        key={service.value}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary cursor-pointer transition-colors"
-                      >
-                        <Checkbox
-                          checked={formData.additionalServices.includes(
-                            service.value
-                          )}
-                          onCheckedChange={() =>
-                            toggleAdditionalService(service.value)
-                          }
-                        />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground">
-                            {service.label}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            +${service.price}
-                          </p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Contact Info */}
-            {step === 3 && (
-              <div className="space-y-6 animate-fade-in">
-                <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
-                  Your contact information
-                </h2>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Full Name *
-                    </label>
-                    <Input
-                      placeholder="John Doe"
-                      value={formData.customerName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, customerName: e.target.value })
-                      }
-                    />
                   </div>
 
+                  {/* Postal Code Field */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Email *
+                      <MapPin className="w-4 h-4 inline mr-1" />
+                      Postal Code *
                     </label>
                     <Input
-                      type="email"
-                      placeholder="john@example.com"
-                      value={formData.customerEmail}
-                      onChange={(e) =>
-                        setFormData({ ...formData, customerEmail: e.target.value })
-                      }
+                      placeholder="e.g., L4M 1A1"
+                      value={formData.postalCode}
+                      onChange={(e) => handlePostalCodeChange(e.target.value)}
+                      maxLength={7}
+                      className={postalCodeChecked ? (isServiceable ? 'border-green-500' : 'border-red-500') : ''}
                     />
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Phone *
-                    </label>
-                    <Input
-                      type="tel"
-                      placeholder="(123) 456-7890"
-                      value={formData.customerPhone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, customerPhone: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Street Address
-                    </label>
-                    <Input
-                      placeholder="123 Main Street"
-                      value={formData.street}
-                      onChange={(e) =>
-                        setFormData({ ...formData, street: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      City
-                    </label>
-                    <Input
-                      placeholder="Toronto"
-                      value={formData.city}
-                      onChange={(e) =>
-                        setFormData({ ...formData, city: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Province
-                    </label>
-                    <Input
-                      placeholder="ON"
-                      value={formData.province}
-                      onChange={(e) =>
-                        setFormData({ ...formData, province: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Review */}
-            {step === 4 && (
-              <div className="space-y-6 animate-fade-in">
-                <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
-                  Review your quote
-                </h2>
-
-                <div className="bg-muted rounded-lg p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Calculator className="w-8 h-8 text-primary" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Estimated Price
-                      </p>
-                      <p className="text-3xl font-heading font-black text-foreground">
-                        ${calculateEstimate().toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Service Type:</span>
-                      <span className="font-medium text-foreground">
-                        {serviceTypes.find((s) => s.value === formData.serviceType)?.label}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Room Type:</span>
-                      <span className="font-medium text-foreground">
-                        {roomTypes.find((r) => r.value === formData.roomType)?.label}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Room Size:</span>
-                      <span className="font-medium text-foreground">
-                        {formData.roomSize} sq ft
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Location:</span>
-                      <span className="font-medium text-foreground">
-                        {formData.postalCode}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Paint Quality:</span>
-                      <span className="font-medium text-foreground">
-                        {paintQualities.find((q) => q.value === formData.paintQuality)?.label}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Coats:</span>
-                      <span className="font-medium text-foreground">
-                        {formData.numberOfCoats}
-                      </span>
-                    </div>
-                    {formData.additionalServices.length > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Additional Services:
-                        </span>
-                        <span className="font-medium text-foreground text-right">
-                          {formData.additionalServices.length} selected
-                        </span>
+                    {/* Service availability feedback */}
+                    {postalCodeChecked && isServiceable === true && (
+                      <div className="flex items-center gap-2 mt-2 text-green-600">
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm">Great! We provide services in your area.</span>
                       </div>
                     )}
-                  </div>
-                </div>
 
-                <div className="bg-card rounded-lg p-6 border border-border">
-                  <h3 className="font-heading font-bold text-foreground mb-4">
-                    Contact Information
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <span className="text-muted-foreground">Name:</span>{" "}
-                      {formData.customerName}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">Email:</span>{" "}
-                      {formData.customerEmail}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">Phone:</span>{" "}
-                      {formData.customerPhone}
-                    </p>
-                    {formData.street && (
-                      <p>
-                        <span className="text-muted-foreground">Address:</span>{" "}
-                        {formData.street}, {formData.city}, {formData.province}
+                    {postalCodeChecked && isServiceable === false && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-3">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-red-800">Service Not Available</p>
+                            <p className="text-sm text-red-600 mt-1">
+                              Sorry, we do not currently provide services in this area. We serve the Greater Toronto Area, Barrie, Orillia, and surrounding regions.
+                            </p>
+                            <p className="text-sm text-red-600 mt-2">
+                              Please call us at <a href="tel:+17059510764" className="font-medium underline">+1 (705) 951-0764</a> to discuss your project.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!postalCodeChecked && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter your postal code to check service availability
                       </p>
                     )}
                   </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Special Instructions (Optional)
-                  </label>
-                  <Textarea
-                    placeholder="Any special requirements or notes..."
-                    rows={4}
-                    value={formData.specialInstructions}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        specialInstructions: e.target.value,
-                      })
-                    }
-                  />
+              {/* Step 2: Options */}
+              {step === 2 && (
+                <div className="space-y-6 animate-fade-in">
+                  <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
+                    Choose your options
+                  </h2>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Paint Quality *
+                    </label>
+                    <Select
+                      value={getSelectedLabel(formData.paintQuality, paintQualities)}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, paintQuality: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paintQualities.map((q) => (
+                          <SelectItem key={q.value} value={q.value}>
+                            {q.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Number of Coats
+                    </label>
+                    <Select
+                      value={formData.numberOfCoats === "1" ? "1 Coat" : formData.numberOfCoats === "2" ? "2 Coats (Recommended)" : "3 Coats"}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, numberOfCoats: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Coat</SelectItem>
+                        <SelectItem value="2">2 Coats (Recommended)</SelectItem>
+                        <SelectItem value="3">3 Coats</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-4">
+                      Additional Services
+                    </label>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {additionalServices.map((service) => (
+                        <label
+                          key={service.value}
+                          className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary cursor-pointer transition-colors"
+                        >
+                          <Checkbox
+                            checked={formData.additionalServices.includes(
+                              service.value
+                            )}
+                            onCheckedChange={() =>
+                              toggleAdditionalService(service.value)
+                            }
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              {service.label}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              +${service.price}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* Step 3: Contact Info */}
+              {step === 3 && (
+                <div className="space-y-6 animate-fade-in">
+                  <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
+                    Your contact information
+                  </h2>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Full Name *
+                      </label>
+                      <Input
+                        placeholder="John Doe"
+                        value={formData.customerName}
+                        onChange={(e) =>
+                          setFormData({ ...formData, customerName: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Email *
+                      </label>
+                      <Input
+                        type="email"
+                        placeholder="john@example.com"
+                        value={formData.customerEmail}
+                        onChange={(e) =>
+                          setFormData({ ...formData, customerEmail: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Phone *
+                      </label>
+                      <Input
+                        type="tel"
+                        placeholder="(123) 456-7890"
+                        value={formData.customerPhone}
+                        onChange={(e) =>
+                          setFormData({ ...formData, customerPhone: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Street Address
+                      </label>
+                      <Input
+                        placeholder="123 Main Street"
+                        value={formData.street}
+                        onChange={(e) =>
+                          setFormData({ ...formData, street: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        City
+                      </label>
+                      <Input
+                        placeholder="Toronto"
+                        value={formData.city}
+                        onChange={(e) =>
+                          setFormData({ ...formData, city: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Province
+                      </label>
+                      <Input
+                        placeholder="ON"
+                        value={formData.province}
+                        onChange={(e) =>
+                          setFormData({ ...formData, province: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Review */}
+              {step === 4 && (
+                <div className="space-y-6 animate-fade-in">
+                  <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
+                    Review your quote
+                  </h2>
+
+                  <div className="bg-muted rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <Calculator className="w-8 h-8 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Estimated Price
+                        </p>
+                        <p className="text-3xl font-heading font-black text-foreground">
+                          ${calculateEstimate().toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Service Type:</span>
+                        <span className="font-medium text-foreground">
+                          {serviceTypes.find((s) => s.value === formData.serviceType)?.label}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Room Type:</span>
+                        <span className="font-medium text-foreground">
+                          {roomTypes.find((r) => r.value === formData.roomType)?.label}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Room Size:</span>
+                        <span className="font-medium text-foreground">
+                          {formData.roomSize} sq ft
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Location:</span>
+                        <span className="font-medium text-foreground">
+                          {formData.postalCode}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Paint Quality:</span>
+                        <span className="font-medium text-foreground">
+                          {paintQualities.find((q) => q.value === formData.paintQuality)?.label}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Coats:</span>
+                        <span className="font-medium text-foreground">
+                          {formData.numberOfCoats}
+                        </span>
+                      </div>
+                      {formData.additionalServices.length > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            Additional Services:
+                          </span>
+                          <span className="font-medium text-foreground text-right">
+                            {formData.additionalServices.length} selected
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-card rounded-lg p-6 border border-border">
+                    <h3 className="font-heading font-bold text-foreground mb-4">
+                      Contact Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <span className="text-muted-foreground">Name:</span>{" "}
+                        {formData.customerName}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Email:</span>{" "}
+                        {formData.customerEmail}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Phone:</span>{" "}
+                        {formData.customerPhone}
+                      </p>
+                      {formData.street && (
+                        <p>
+                          <span className="text-muted-foreground">Address:</span>{" "}
+                          {formData.street}, {formData.city}, {formData.province}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Special Instructions (Optional)
+                    </label>
+                    <Textarea
+                      placeholder="Any special requirements or notes..."
+                      rows={4}
+                      value={formData.specialInstructions}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          specialInstructions: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation */}
+              <div className="flex justify-between mt-8 pt-6 border-t border-border">
+                {step > 1 ? (
+                  <Button variant="outline" onClick={() => setStep(step - 1)}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                ) : (
+                  <div />
+                )}
+
+                {step < 4 ? (
+                  <Button onClick={() => setStep(step + 1)} disabled={!canProceed()}>
+                    Continue
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button onClick={handleSubmit} disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit Quote Request"
+                    )}
+                  </Button>
+                )}
               </div>
-            )}
-
-            {/* Navigation */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-border">
-              {step > 1 ? (
-                <Button variant="outline" onClick={() => setStep(step - 1)}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              ) : (
-                <div />
-              )}
-
-              {step < 4 ? (
-                <Button onClick={() => setStep(step + 1)} disabled={!canProceed()}>
-                  Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={handleSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit Quote Request"
-                  )}
-                </Button>
-              )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
     </Layout>
   );

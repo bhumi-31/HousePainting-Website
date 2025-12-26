@@ -86,7 +86,7 @@ const Login = () => {
           <div className="flex items-center gap-6 text-sm text-white/70">
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4" />
-              <span>705-951-0764</span>
+              <span>+1 (705) 951-0764</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4" />

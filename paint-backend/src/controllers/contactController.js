@@ -44,7 +44,7 @@ exports.submitContact = async (req, res) => {
                             <p style="margin: 0;"><strong>Message:</strong> ${message}</p>
                         </div>
                         
-                        <p>For urgent inquiries, call us at 705-951-0764</p>
+                        <p>For urgent inquiries, call us at +1 (705) 951-0764</p>
                         
                         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                         <p style="font-size: 12px; color: #888; text-align: center;">
@@ -292,7 +292,7 @@ exports.replyToContact = async (req, res) => {
                         ${contact.message}
                     </p>
                     
-                    <p>If you have more questions, feel free to reply or call us at 705-951-0764.</p>
+                    <p>If you have more questions, feel free to reply or call us at +1 (705) 951-0764.</p>
                     
                     <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                     <p style="font-size: 12px; color: #888; text-align: center;">
