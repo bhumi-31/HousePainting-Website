@@ -348,6 +348,9 @@ exports.resetPassword = async (req, res) => {
 
 
 // Google OAuth - Verify Google token and login/register
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '104445330386-r7lq8k7b28l4tldtb1v45d4c38217bb4.apps.googleusercontent.com'); // Best practice is to use env var
+
 exports.googleAuth = async (req, res) => {
     try {
         const { credential } = req.body;
@@ -359,16 +362,12 @@ exports.googleAuth = async (req, res) => {
             });
         }
 
-        // Decode the Google JWT (we trust Google's signing)
-        const base64Url = credential.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-            atob(base64)
-                .split('')
-                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                .join('')
-        );
-        const payload = JSON.parse(jsonPayload);
+        // Securely verify the Google JWT using the official library
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            // audience: process.env.GOOGLE_CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        });
+        const payload = ticket.getPayload();
 
         const { sub: googleId, email, name, picture } = payload;
 

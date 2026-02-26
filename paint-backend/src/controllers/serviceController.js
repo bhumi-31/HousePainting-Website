@@ -45,7 +45,7 @@ exports.createService = async (req, res) => {
         });
     } catch (error) {
         console.error('Create Service Error:', error);
-        
+
         // Handle Mongoose validation errors
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(e => e.message);
@@ -55,7 +55,7 @@ exports.createService = async (req, res) => {
                 errors: messages
             });
         }
-        
+
         // Handle duplicate key error
         if (error.code === 11000) {
             return res.status(400).json({
@@ -63,7 +63,7 @@ exports.createService = async (req, res) => {
                 message: 'Service with this name already exists'
             });
         }
-        
+
         res.status(500).json({
             success: false,
             message: 'Failed to create service',
@@ -198,7 +198,15 @@ exports.updateService = async (req, res) => {
             }
         }
 
-        const updatedService = await Service.findByIdAndUpdate(id, req.body,
+        const allowedUpdates = {};
+        const fields = ['name', 'description', 'priceRange', 'images', 'features', 'duration', 'category', 'estimatedTimeline', 'isActive'];
+        fields.forEach(field => {
+            if (req.body[field] !== undefined) {
+                allowedUpdates[field] = req.body[field];
+            }
+        });
+
+        const updatedService = await Service.findByIdAndUpdate(id, allowedUpdates,
             {
                 new: true,
                 runValidators: true
@@ -250,7 +258,7 @@ exports.deleteService = async (req, res) => {
                 name: service.name
             }
         });
-    }catch (error) {
+    } catch (error) {
         console.error('Delete Service Error:', error);
         res.status(500).json({
             success: false,
@@ -261,43 +269,43 @@ exports.deleteService = async (req, res) => {
 }
 
 exports.toggleServiceStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
 
-    // Validate MongoDB ObjectId format
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid service ID format',
-      });
+        // Validate MongoDB ObjectId format
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid service ID format',
+            });
+        }
+
+        const service = await Service.findById(id);
+
+        if (!service) {
+            return res.status(404).json({
+                success: false,
+                message: 'Service not found'
+            });
+        }
+
+        // Toggle status
+        service.isActive = !service.isActive;
+        await service.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Service ${service.isActive ? 'activated' : 'deactivated'}`,
+            service
+        });
+
+    } catch (error) {
+        console.error('Toggle Status Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to toggle service status',
+            error: error.message
+        });
     }
-
-    const service = await Service.findById(id);
-
-    if (!service) {
-      return res.status(404).json({
-        success: false,
-        message: 'Service not found'
-      });
-    }
-
-    // Toggle status
-    service.isActive = !service.isActive;
-    await service.save();
-
-    res.status(200).json({
-      success: true,
-      message: `Service ${service.isActive ? 'activated' : 'deactivated'}`,
-      service
-    });
-
-  } catch (error) {
-    console.error('Toggle Status Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to toggle service status',
-      error: error.message
-    });
-  }
 };
 

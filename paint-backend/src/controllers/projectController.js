@@ -42,7 +42,7 @@ exports.createProject = async (req, res) => {
         });
     } catch (error) {
         console.error('Create Project Error:', error);
-        
+
         // Handle Mongoose validation errors
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(e => e.message);
@@ -52,7 +52,7 @@ exports.createProject = async (req, res) => {
                 errors: messages
             });
         }
-        
+
         res.status(500).json({
             success: false,
             message: 'Failed to create project',
@@ -88,7 +88,8 @@ exports.getAllProjects = async (req, res) => {
             filter.featured = featured === 'true';
         }
 
-        filter.status = status || 'published';
+        // Fix NoSQL injection: Ensure status is a string, not an object (e.g. status[$ne]=published)
+        filter.status = typeof status === 'string' ? status : 'published';
 
         if (minCost || maxCost) {
             filter.cost = {};
@@ -224,7 +225,15 @@ exports.updateProject = async (req, res) => {
             });
         }
 
-        project = await Project.findByIdAndUpdate(id, req.body, {
+        const allowedUpdates = {};
+        const fields = ['title', 'description', 'location', 'beforeImage', 'afterImage', 'additionalImage', 'roomType', 'paintBrand', 'colors', 'duration', 'size', 'cost', 'clientName', 'testimonial', 'service', 'featured', 'status'];
+        fields.forEach(field => {
+            if (req.body[field] !== undefined) {
+                allowedUpdates[field] = req.body[field];
+            }
+        });
+
+        project = await Project.findByIdAndUpdate(id, allowedUpdates, {
             new: true,
             runValidators: true,
         }).populate('service');
@@ -358,63 +367,63 @@ exports.getProjectsByRoomType = async (req, res) => {
 };
 
 exports.getProjectStats = async (req, res) => {
-  try {
-    // Total projects
-    const totalProjects = await Project.countDocuments({ status: 'published' });
+    try {
+        // Total projects
+        const totalProjects = await Project.countDocuments({ status: 'published' });
 
-    // Featured projects
-    const featuredCount = await Project.countDocuments({ 
-      featured: true, 
-      status: 'published' 
-    });
+        // Featured projects
+        const featuredCount = await Project.countDocuments({
+            featured: true,
+            status: 'published'
+        });
 
-    // Projects by room type
-    const projectsByRoom = await Project.aggregate([
-      { $match: { status: 'published' } },
-      { 
-        $group: { 
-          _id: '$roomType', 
-          count: { $sum: 1 } 
-        } 
-      },
-      { $sort: { count: -1 } }
-    ]);
+        // Projects by room type
+        const projectsByRoom = await Project.aggregate([
+            { $match: { status: 'published' } },
+            {
+                $group: {
+                    _id: '$roomType',
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { count: -1 } }
+        ]);
 
-    // Most viewed projects
-    const mostViewed = await Project.find({ status: 'published' })
-      .sort('-viewCount')
-      .limit(5)
-      .select('title viewCount');
+        // Most viewed projects
+        const mostViewed = await Project.find({ status: 'published' })
+            .sort('-viewCount')
+            .limit(5)
+            .select('title viewCount');
 
-    // Total views
-    const totalViews = await Project.aggregate([
-      { $match: { status: 'published' } },
-      { 
-        $group: { 
-          _id: null, 
-          total: { $sum: '$viewCount' } 
-        } 
-      }
-    ]);
+        // Total views
+        const totalViews = await Project.aggregate([
+            { $match: { status: 'published' } },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: '$viewCount' }
+                }
+            }
+        ]);
 
-    res.status(200).json({
-      success: true,
-      stats: {
-        totalProjects,
-        featuredCount,
-        projectsByRoom,
-        mostViewed,
-        totalViews: totalViews[0]?.total || 0
-      }
-    });
+        res.status(200).json({
+            success: true,
+            stats: {
+                totalProjects,
+                featuredCount,
+                projectsByRoom,
+                mostViewed,
+                totalViews: totalViews[0]?.total || 0
+            }
+        });
 
-  } catch (error) {
-    console.error('Get Project Stats Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch project statistics',
-      error: error.message
-    });
-  }
+    } catch (error) {
+        console.error('Get Project Stats Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch project statistics',
+            error: error.message
+        });
+    }
 };
 
