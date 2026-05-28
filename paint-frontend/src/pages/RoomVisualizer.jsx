@@ -29,6 +29,7 @@ const RoomVisualizer = () => {
   const fileInputRef = useRef(null);
 
   const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,14 +44,15 @@ const RoomVisualizer = () => {
         toast({ title: "File too large", description: "Please upload an image smaller than 10MB", variant: "destructive" });
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => setUploadedImage(reader.result);
-      reader.readAsDataURL(file);
+      setUploadedFile(file);
+      setUploadedImage(URL.createObjectURL(file));
     }
   };
 
   const removeUploadedImage = () => {
+    if (uploadedImage) URL.revokeObjectURL(uploadedImage);
     setUploadedImage(null);
+    setUploadedFile(null);
     setGeneratedImage(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -79,7 +81,7 @@ const RoomVisualizer = () => {
       : selectedColor.prompt;
 
     try {
-      const response = await aiApi.visualize(prompt, uploadedImage);
+      const response = await aiApi.visualize(prompt, uploadedFile);
       setGeneratedImage(response.image);
       toast({ title: "Success!", description: "Your room visualization is ready" });
     } catch (error) {

@@ -2,7 +2,8 @@ const { generateImage } = require('../services/openaiImage');
 
 const visualizeRoom = async (req, res) => {
   try {
-    const { prompt, imageBase64 } = req.body;
+    const { prompt } = req.body;
+    const imageFile = req.file; // Multer provides the file buffer
 
     if (!prompt) {
       return res.status(400).json({
@@ -11,8 +12,9 @@ const visualizeRoom = async (req, res) => {
       });
     }
 
-    // Call the image generation service
-    const result = await generateImage({ prompt, imageBase64 });
+    // Pass the buffer directly to the image generation service
+    const imageBuffer = imageFile ? imageFile.buffer : null;
+    const result = await generateImage({ prompt, imageBuffer });
 
     const image =
       result.type === 'base64'

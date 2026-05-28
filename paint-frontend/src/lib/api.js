@@ -366,11 +366,23 @@ export const contactApi = {
 // AI Room Visualizer API
 export const aiApi = {
   // Generate room visualization
-  visualize: (prompt, imageBase64 = null) =>
-    fetchApi("/ai/visualize", {
+  visualize: async (prompt, imageFile = null) => {
+    const formData = new FormData();
+    formData.append("prompt", prompt);
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/ai/visualize`, {
       method: "POST",
-      body: JSON.stringify({ prompt, imageBase64 }),
-    }),
+      headers: getAuthHeader(),
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message);
+    return data;
+  },
 
   // Get color suggestions
   getColorSuggestions: (roomType, mood) => {

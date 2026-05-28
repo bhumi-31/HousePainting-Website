@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/authMiddleware');
+const { uploadSingle } = require('../middleware/uploadMiddleware');
 const {
   visualizeRoom,
   getColorSuggestions,
@@ -8,8 +9,8 @@ const {
   getSavedDesigns
 } = require('../controllers/aiController');
 
-// Public route - anyone can try the visualizer
-router.post('/visualize', visualizeRoom);
+// Public route - anyone can try the visualizer (image sent via multipart/form-data)
+router.post('/visualize', uploadSingle, visualizeRoom);
 
 // Public route - get color suggestions
 router.get('/colors', getColorSuggestions);

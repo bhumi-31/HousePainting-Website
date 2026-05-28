@@ -32,21 +32,17 @@ This is a wall repaint visualization. The customer wants to see their EXACT room
   return userPrompt;
 }
 
-async function generateImage({ prompt, imageBase64 }) {
+async function generateImage({ prompt, imageBuffer }) {
   if (!prompt || !prompt.trim()) {
     throw new Error("Prompt is required");
   }
 
-  const enhancedPrompt = enhancePrompt(prompt, !!imageBase64);
+  const enhancedPrompt = enhancePrompt(prompt, !!imageBuffer);
 
   try {
-    if (imageBase64) {
-      // Extract base64 data and convert to buffer
-      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-      const buffer = Buffer.from(base64Data, "base64");
-
-      // Use OpenAI's toFile helper for proper file handling
-      const imageFile = await OpenAI.toFile(buffer, "room.png", {
+    if (imageBuffer) {
+      // Use OpenAI's toFile helper — buffer comes directly from Multer (no Base64 conversion needed)
+      const imageFile = await OpenAI.toFile(imageBuffer, "room.png", {
         type: "image/png",
       });
 
@@ -90,7 +86,7 @@ async function generateImage({ prompt, imageBase64 }) {
     console.error("Full error:", err);
 
     // Enhanced prompt for pollinations fallback
-    const pollinationsPrompt = imageBase64
+    const pollinationsPrompt = imageBuffer
       ? `Interior room with ${prompt}. Photorealistic, same room layout, professional interior design photography.`
       : prompt;
 
