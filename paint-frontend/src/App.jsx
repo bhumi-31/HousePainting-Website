@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/ui/index";
@@ -33,49 +32,45 @@ import AdminContacts from "./pages/admin/Contacts";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/services/:id" element={<ServiceDetail />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/portfolio/:id" element={<ProjectDetail />} />
-            <Route path="/quote" element={<Quote />} />
-            <Route path="/reviews" element={<Reviews />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/visualizer" element={<RoomVisualizer />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
+  <AuthProvider>
+    <ToastProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:id" element={<ServiceDetail />} />
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/portfolio/:id" element={<ProjectDetail />} />
+          <Route path="/quote" element={<Quote />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/visualizer" element={<RoomVisualizer />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="projects" element={<AdminProjects />} />
-              <Route path="quotes" element={<AdminQuotes />} />
-              <Route path="reviews" element={<AdminReviews />} />
-              <Route path="services" element={<AdminServices />} />
-              <Route path="contacts" element={<AdminContacts />} />
-            </Route>
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="projects" element={<AdminProjects />} />
+            <Route path="quotes" element={<AdminQuotes />} />
+            <Route path="reviews" element={<AdminReviews />} />
+            <Route path="services" element={<AdminServices />} />
+            <Route path="contacts" element={<AdminContacts />} />
+          </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
+  </AuthProvider>
 );
 
 export default App;
