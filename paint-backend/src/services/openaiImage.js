@@ -1,10 +1,41 @@
-const fs = require("fs");
-const path = require("path");
 const OpenAI = require("openai");
+const cloudinary = require("../config/cloudinary");
+const { Readable } = require("stream");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Convert buffer to readable stream for Cloudinary upload
+const bufferToStream = (buffer) => {
+  const readable = new Readable();
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
+};
+
+// Upload a Base64 image to Cloudinary and return the CDN URL
+async function uploadToCloudinary(base64Data) {
+  const buffer = Buffer.from(base64Data, "base64");
+
+  const result = await new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "house-paint/ai-visualizations",
+        resource_type: "image",
+        format: "png",
+        transformation: [{ quality: "auto" }],
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    bufferToStream(buffer).pipe(uploadStream);
+  });
+
+  return result.secure_url;
+}
 
 // Enhanced prompt for wall-only changes - VERY strict to preserve room exactly
 function enhancePrompt(userPrompt, hasImage) {
@@ -56,11 +87,16 @@ async function generateImage({ prompt, imageBuffer }) {
         size: "1024x1024",
       });
 
-      console.log("✅ OpenAI edit successful!");
+      console.log("✅ OpenAI edit successful! Uploading to Cloudinary...");
+
+      // Upload the Base64 result to Cloudinary → get a CDN URL
+      const imageUrl = await uploadToCloudinary(res.data[0].b64_json);
+
+      console.log("☁️ Cloudinary upload done:", imageUrl);
 
       return {
-        type: "base64",
-        image: res.data[0].b64_json,
+        type: "url",
+        image: imageUrl,
         provider: "openai-edit",
       };
     }
@@ -75,14 +111,21 @@ async function generateImage({ prompt, imageBuffer }) {
       n: 1,
     });
 
+    console.log("✅ OpenAI generate successful! Uploading to Cloudinary...");
+
+    // Upload the Base64 result to Cloudinary → get a CDN URL
+    const imageUrl = await uploadToCloudinary(result.data[0].b64_json);
+
+    console.log("☁️ Cloudinary upload done:", imageUrl);
+
     return {
-      type: "base64",
-      image: result.data[0].b64_json,
+      type: "url",
+      image: imageUrl,
       provider: "openai-generate",
     };
 
   } catch (err) {
-    console.error("❌ OpenAI error:", err.message);
+    console.error("❌ OpenAI/Cloudinary error:", err.message);
     console.error("Full error:", err);
 
     // Enhanced prompt for pollinations fallback

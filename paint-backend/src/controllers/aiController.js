@@ -16,14 +16,10 @@ const visualizeRoom = async (req, res) => {
     const imageBuffer = imageFile ? imageFile.buffer : null;
     const result = await generateImage({ prompt, imageBuffer });
 
-    const image =
-      result.type === 'base64'
-        ? `data:image/png;base64,${result.image}`
-        : result.image;
-
+    // All providers now return URLs (OpenAI → Cloudinary CDN, Pollinations → direct URL)
     res.json({
       success: true,
-      image,
+      image: result.image,
       prompt,
       model: result.provider,
       type: result.type
