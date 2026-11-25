@@ -2,10 +2,6 @@ const OpenAI = require("openai");
 const cloudinary = require("../config/cloudinary");
 const { Readable } = require("stream");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 // Convert buffer to readable stream for Cloudinary upload
 const bufferToStream = (buffer) => {
   const readable = new Readable();
@@ -71,6 +67,10 @@ async function generateImage({ prompt, imageBuffer }) {
   const enhancedPrompt = enhancePrompt(prompt, !!imageBuffer);
 
   try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
     if (imageBuffer) {
       // Use OpenAI's toFile helper — buffer comes directly from Multer (no Base64 conversion needed)
       const imageFile = await OpenAI.toFile(imageBuffer, "room.png", {

@@ -196,7 +196,7 @@ Free hosting is best-effort and Render advises against using free instances for 
 Add these in the relevant Render service's **Environment** settings if you use the associated feature:
 
 - API: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for image uploads.
-- API: `OPENAI_API_KEY` for the AI image feature.
+- API: `OPENAI_API_KEY` to use OpenAI image generation. Without it, the existing Pollinations fallback is used.
 - Frontend: `VITE_GOOGLE_CLIENT_ID` for Google sign-in. Set the deployed frontend origin in the Google OAuth client's authorized JavaScript origins.
 
 MongoDB Atlas must allow connections from Render. Free Render services do not have fixed outbound IP addresses; if you need to allow all IPs in Atlas, use a dedicated database user with a strong password and only the permissions the app needs.
