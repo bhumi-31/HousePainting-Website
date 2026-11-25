@@ -53,7 +53,7 @@ A full-stack web application for a professional house painting business serving 
 | Images | Cloudinary |
 | AI | Open API (gpt-image-1)|
 | Email | Nodemailer (Gmail SMTP) |
-| Deployment | Docker, AWS EC2 |
+| Deployment | Render free tier, Docker, AWS EC2 |
 
 ---
 
@@ -175,6 +175,31 @@ HousePainting-Website/
 ```
 
 ---
+
+## 🌐 Render Free-Tier Deployment
+
+The repository includes a [`render.yaml`](./render.yaml) Blueprint for deploying the frontend and API as separate Render services. MongoDB remains on MongoDB Atlas; this does not migrate or copy your database.
+
+1. Push this repository, including `render.yaml`, to GitHub.
+2. Sign in to [Render](https://render.com), choose **New → Blueprint**, and connect this repository.
+3. When prompted, enter your existing MongoDB Atlas connection string for `MONGO_URI`. Render generates `JWT_SECRET` automatically.
+4. Deploy both services. The frontend build gets the API URL from the API service automatically.
+5. If Render assigns the frontend a URL other than `https://housepainting-web-bhumi31.onrender.com`, update `FRONTEND_URL` in the API service's environment settings to the exact frontend origin, then redeploy the API.
+6. Open the API's `/health` URL and the frontend URL to confirm they work. If you connect a custom domain, set `FRONTEND_URL` to that exact frontend origin. Keep AWS running until you have tested the deployed site and updated any custom-domain DNS records.
+
+The API service uses the free plan, so it may take about a minute to wake after 15 minutes without traffic. Render's free web services also have ephemeral filesystems and can be restarted; uploads should use the existing Cloudinary integration, not local disk. Render currently blocks outbound SMTP on ports 25, 465, and 587 on free web services, so email notifications and password-reset emails will not work there unless the app is changed to use an email provider's HTTPS API or a paid service. The AI image provider and other third-party services can still charge separately for usage; moving the app host does not make those APIs free.
+
+Free hosting is best-effort and Render advises against using free instances for production. Confirm current usage limits and terms before moving a live business site.
+
+### Optional service settings
+
+Add these in the relevant Render service's **Environment** settings if you use the associated feature:
+
+- API: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for image uploads.
+- API: `OPENAI_API_KEY` for the AI image feature.
+- Frontend: `VITE_GOOGLE_CLIENT_ID` for Google sign-in. Set the deployed frontend origin in the Google OAuth client's authorized JavaScript origins.
+
+MongoDB Atlas must allow connections from Render. Free Render services do not have fixed outbound IP addresses; if you need to allow all IPs in Atlas, use a dedicated database user with a strong password and only the permissions the app needs.
 
 ## 🌐 AWS EC2 Deployment
 
