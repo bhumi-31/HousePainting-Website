@@ -184,8 +184,19 @@ The repository includes a [`render.yaml`](./render.yaml) Blueprint for deploying
 2. Sign in to [Render](https://render.com), choose **New → Blueprint**, and connect this repository.
 3. When prompted, enter your existing MongoDB Atlas connection string for `MONGO_URI`. Render generates `JWT_SECRET` automatically.
 4. Deploy both services. The frontend build gets the API URL from the API service automatically.
-5. If Render assigns the frontend a URL other than `https://housepainting-web-bhumi31.onrender.com`, update `FRONTEND_URL` in the API service's environment settings to the exact frontend origin, then redeploy the API.
-6. Open the API's `/health` URL and the frontend URL to confirm they work. If you connect a custom domain, set `FRONTEND_URL` to that exact frontend origin. Keep AWS running until you have tested the deployed site and updated any custom-domain DNS records.
+5. `FRONTEND_URL` is set to `https://chandanhousepainting.com` for the custom domain below. If you use another frontend origin, update it in the API service's environment settings.
+6. Open the API's `/health` URL and the frontend URL to confirm they work. Keep AWS running until you have tested the deployed site and updated any custom-domain DNS records.
+
+### Custom domain on Hostinger
+
+The Blueprint adds `chandanhousepainting.com` to the frontend service and points API CORS to that domain. In Render, sync the Blueprint and approve the custom-domain change. Then in Hostinger's DNS records for `chandanhousepainting.com`, configure:
+
+| Type | Host | Points to |
+|------|------|-----------|
+| A | `@` | `216.24.57.1` |
+| CNAME | `www` | `housepainting-web-bhumi31-m1cf.onrender.com` |
+
+Remove conflicting `AAAA` records and old website `A`/`CNAME` records for `@` or `www`. Keep email-related `MX` and `TXT` records unchanged. After DNS propagates, verify the domain in the Render frontend service's **Settings → Custom Domains**; Render provisions HTTPS automatically.
 
 The API service uses the free plan, so it may take about a minute to wake after 15 minutes without traffic. Render's free web services also have ephemeral filesystems and can be restarted; uploads should use the existing Cloudinary integration, not local disk. Render currently blocks outbound SMTP on ports 25, 465, and 587 on free web services, so email notifications and password-reset emails will not work there unless the app is changed to use an email provider's HTTPS API or a paid service. The AI image provider and other third-party services can still charge separately for usage; moving the app host does not make those APIs free.
 
